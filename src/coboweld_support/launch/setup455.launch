@@ -29,7 +29,7 @@
 
 <launch>
   <include file =
-    "$(find cobo_weld_moveit_config)/launch/coboweld_planning_execution435.launch">
+    "$(find coboweld_moveit_config)/launch/coboweld_planning_execution455.launch">
 
 <!-- Simulated Robot in RViz -->
     <arg name="sim" default="true" />
