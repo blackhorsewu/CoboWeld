@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+
+<!--
+  Chinese National Engineering Research Centre for Steel Structure
+  (Hong Kong Branch)
+
+  Hong Kong Polytechnic University
+
+  Author: Victor W H Wu
+  Date: 10 August, 2022.
+
+  This file launches the necessary packages for the calibration of the 
+  transformation from the camera to the end effector.
+
+  In this case of this project, the camera is the Intel Realsense D435i.
+
+  The end effector is the tool0.
+
+  1. launch the Intel Realsense D435i camera in color.
+  2. launch the ar_track_alvar to recognise the calibration markers.
+  3. launch the average_tf that take the average of the tf of 4 markers.
+  4. launch the ur5 driver.
+  5. launch the eye-in-hand calibration package. This will launch RViz and RQt.
+  6. launch rqt_image_view.
+
+-->
+
+<launch>
+
+<!--
+  The Intel Realsense D435i camera is the device its pose relative to the
+  end effector is to be calibrated.
+-->
+  <include file="$(find realsense2_camera)/launch/rs_camera.launch" >
+    <arg name="camera" value="d435i" />
+    <arg name="enable_pointcloud" value="true"/>
+  </include>
+
+<!--
+  AR markers are to be detected for calibration purpose.
+-->
+	<arg name="marker_size" default="3.563" />
+	<arg name="max_new_marker_error" default="0.08" />
+	<arg name="max_track_error" default="0.2" />
+	<arg name="cam_image_topic" default="/d435i/color/image_raw" />
+	<arg name="cam_info_topic" default="/d435i/color/camera_info" />
+	<arg name="output_frame" default="/d435i_color_optical_frame" />
+
+	<node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkersNoKinect" respawn="false" output="screen">
+		<param name="marker_size"           type="double" value="$(arg marker_size)" />
+		<param name="max_new_marker_error"  type="double" value="$(arg max_new_marker_error)" />
+		<param name="max_track_error"       type="double" value="$(arg max_track_error)" />
+		<param name="output_frame"          type="string" value="$(arg output_frame)" />
+
+		<remap from="camera_image"  to="$(arg cam_image_topic)" />
+		<remap from="camera_info"   to="$(arg cam_info_topic)" />
+	</node>
+
+<!--
+  Average four markers detected to make it more accurate
+-->
+  <node	
+    pkg		= "average_tf"	
+    type 	= "average_tf_node"
+    name	=	"average_tf_1"
+    args 	= "d435i_color_optical_frame
+            ar_marker_3
+            ar_marker_7
+            ar_marker_11
+            ar_marker_13
+            d435i_color_optical_frame
+            ar_marker_avg
+            50"
+    output  =  "screen"
+  />
+
+<!--
+  Launch the robot in rviz
+-->
+  <include file=
+  "$(find cobo_weld_moveit_config)/launch/coboweld_planning_execution435.launch">
+    <arg name="sim" default="false" />
+    <arg name="robot_ip" value="192.168.0.103" />
+    <arg name="rviz" value="True" />
+  </include>
+
+<!--
+  Launch the calibrator.
+-->
+  <include file="$(find easy_handeye)/launch/eye-in-hand.launch" />
+
+</launch>

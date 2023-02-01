@@ -1,0 +1,16 @@
+Metadata-Version: 1.1
+Name: math3d
+Version: 3.3.3
+Summary: 3D Special Euclidean mathematics package for Python.
+Home-page: https://gitlab.com/morlin/pymath3d
+Author: Morten Lind
+Author-email: morten@lind.fairuse.org
+License: GNU General Public License v3
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+Classifier: Natural Language :: English
+Classifier: Programming Language :: Python
+Classifier: Topic :: Scientific/Engineering
+Provides: math3d

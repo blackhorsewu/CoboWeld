@@ -1,0 +1,20 @@
+<?xml version="1.0" ?>
+<launch>
+<node	
+	pkg		= "average_tf"	
+	type 	= "average_tf_node"
+	name	=	"average_tf_cam_2"
+	args 	= "camera_02_rgb_optical_frame
+					 ar_marker_cam2_0
+					 ar_marker_cam2_11
+					 ar_marker_cam2_68
+					 ar_marker_cam2_79
+					 second_camera
+					 ar_marker_avg_from_second_camera
+					 20"
+	output  =  "screen"
+/>
+
+<!--camera_rgb_optical_frame-->
+<!--camera_robot-->
+</launch>

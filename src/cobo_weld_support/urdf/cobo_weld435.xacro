@@ -1,0 +1,118 @@
+<?xml version="1.0"?>
+
+<!-- 
+  The xacro file for the UR5 holding Intel Realsense D435i camera together with
+  the Fronius Straight Torch as End Effector
+-->
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro"
+       name="cobo_weld" >
+
+  <xacro:arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface"/>
+
+  <!-- ur5 -->
+  
+  <xacro:include filename="$(find ur_description)/urdf/inc/ur5_macro.xacro" />
+  <xacro:ur5_robot prefix="" />
+
+  <link name="world" />
+
+<!-- There are:-
+     1. The World, everything lives in it.
+     2. The Welding table, our robot arm is installed on it.
+     3. The UR5, our robot arm, with the Straight Fronius Torch as its end effector.
+     4. The RealSense D435i attached to the torch holder.
+-->
+
+  <!-- defining tool -->
+  <!-- Welding torch holder with the Straight Torch -->
+
+  <!-- Actually this is the Fronius Straight Torch held by the holder, 
+       the Realsense camera Orientation has been changed to face the tip of the torch -->
+  <link name="torch">  
+      <visual>
+        <geometry>
+          <mesh filename="package://cobo_weld_support/meshes/collision/STorchRCamKScan.stl"
+                scale="0.001 0.001 0.001"/>
+        </geometry>
+          <origin xyz="0 0 0" rpy="0 ${pi} 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="package://cobo_weld_support/meshes/collision/STorchRCamKScan.stl"
+                scale="0.001 0.001 0.001"/>
+        </geometry>
+          <origin xyz="0 0 0" rpy="0 ${pi} 0"/>
+      </collision>
+  </link>
+
+  <!-- The pose of the Welding Torch (Tool0) with respect to Wrist-3-link is defined here. -->
+  <joint name="wrist_3_link-torch_fixed_joint" type="fixed">
+<!--
+    <origin xyz="0.00395 -0.10284 0.37548" rpy="3.1366625 -0.00247520 1.3734586"/>
+    <origin xyz="0 -0.111 0.360" rpy="0 0 ${pi}"/>
+-->
+    <origin xyz="0.00395 -0.11084 0.36548" rpy="0 0 ${pi}"/>
+    <parent link="wrist_3_link"/>
+    <child link="torch"/>
+  </joint>
+
+  <!-- This is the link for the tail cable of the torch -->
+  <link name="tail" >
+    <visual>
+       <geometry>
+         <cylinder length="0.1" radius="0.0125"/>
+       </geometry>
+       <origin rpy="0 0 0" xyz="0 0 0"/>
+    </visual>
+    <collision>
+       <geometry>
+         <cylinder length="0.1" radius="0.0125"/>
+       </geometry>
+       <origin rpy="0 0 0" xyz="0 0 0"/>
+    </collision>
+  </link>
+
+  <joint name="wrist_3_link-tail_fixed_joint" type="fixed">
+     <origin xyz="0 -0.115 -0.08" rpy="0 0 ${pi/2.0}"/>
+     <parent link="wrist_3_link"/>
+     <child link="tail"/>
+  </joint>
+
+  <!-- Import the realsense D435i description -->
+  <xacro:include filename="$(find realsense2_description)/urdf/_d435.urdf.xacro" />
+  <xacro:sensor_d435 parent="wrist_3_link" use_nominal_extrinsics="true" name="d435i">
+    <origin xyz="0.0 -0.0225 0.18515" rpy="0 ${-pi/2} ${pi/2}"/>
+  </xacro:sensor_d435>
+
+  <link name="table">
+    <visual>
+      <geometry>
+        <box size="1.5 1.0 0.1"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -0.05"/>
+      <material name="Steel">
+        <color rgba="1.0 0.831 0.486 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="1.5 1.0 0.1"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -0.05"/>
+    </collision>
+  </link>
+
+  <joint name="table_to_robot" type="fixed">
+    <parent link="table"/>
+    <child link="base_link"/>
+    <origin xyz="-0.6 0.0 0.015" rpy="0.0 0.0 ${pi}"/>
+  </joint>
+
+  <joint name="world_to_table" type="fixed">
+    <parent link="world"/>
+    <child link="table"/>
+    <origin xyz="0.6 0.0 0.0" rpy="0 0 0"/>
+  </joint>
+
+</robot>

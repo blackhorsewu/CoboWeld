@@ -1,0 +1,11 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: cobo_weld_support
+    relative_path: urdf/cobo_weld435.xacro
+    xacro_args: ""
+  SRDF:
+    relative_path: config/cobo_weld.srdf
+  CONFIG:
+    author_name: Victor W H Wu
+    author_email: victor.wh.wu@polyu.edu.hk
+    generated_timestamp: 1658223829
