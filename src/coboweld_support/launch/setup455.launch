@@ -28,16 +28,17 @@
 -->
 
 <launch>
+<!---->
   <include file =
     "$(find coboweld_moveit_config)/launch/coboweld_planning_execution455.launch">
 
 <!-- Simulated Robot in RViz -->
     <arg name="sim" default="true" />
 
-<!-- Real Robot
+<!-- Real Robot 
     <arg name="sim" default="false"/>
     <arg name="robot_ip" value="192.168.0.103"/>
- -->
+-->
   </include>
 
 <!--
