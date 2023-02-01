@@ -1,10 +1,10 @@
 moveit_setup_assistant_config:
   URDF:
-    package: cobo_weld_support
-    relative_path: urdf/cobo_weld435.xacro
+    package: coboweld_support
+    relative_path: urdf/coboweld435.xacro
     xacro_args: ""
   SRDF:
-    relative_path: config/cobo_weld.srdf
+    relative_path: config/coboweld.srdf
   CONFIG:
     author_name: Victor W H Wu
     author_email: victor.wh.wu@polyu.edu.hk

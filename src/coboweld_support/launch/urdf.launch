@@ -19,7 +19,7 @@
   <arg name="gui" default="true"/>
 
   <param name="robot_description" command =
-  "$(find xacro)/xacro --inorder '$(find cobo_weld_support)/urdf/cobo_weld435.xacro'"/>
+  "$(find xacro)/xacro --inorder '$(find coboweld_support)/urdf/coboweld435.xacro'"/>
 
   <node name="robot_state_publisher" 
         pkg ="robot_state_publisher" 
@@ -34,6 +34,6 @@
   <node name="rviz" 
         pkg="rviz" 
         type="rviz" 
-        args="-d $(find cobo_weld_support)/rviz/urdf.rviz"/>
+        args="-d $(find coboweld_support)/rviz/urdf.rviz"/>
 
 </launch>

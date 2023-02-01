@@ -1,9 +1,9 @@
 <package>
 
-  <name>cobo_weld_moveit_config</name>
+  <name>coboweld_moveit_config</name>
   <version>0.3.0</version>
   <description>
-     An automatically generated package with all the configuration and launch files for using the cobo_weld with the MoveIt! Motion Planning Framework
+     An automatically generated package with all the configuration and launch files for using the coboweld with the MoveIt! Motion Planning Framework
   </description>
   <author email="victor.wh.wu@polyu.edu.hk">Victor W H Wu</author>
   <maintainer email="victor.wh.wu@polyu.edu.hk">Victor W H Wu</maintainer>
@@ -31,7 +31,7 @@
   <run_depend>xacro</run_depend>
   <!-- This package is referenced in the warehouse launch files, but does not build out of the box at the moment. Commented the dependency until this works. -->
   <!-- <run_depend>warehouse_ros_mongo</run_depend> -->
-    <run_depend>cobo_weld_support</run_depend>
+    <run_depend>coboweld_support</run_depend>
 
 
 </package>

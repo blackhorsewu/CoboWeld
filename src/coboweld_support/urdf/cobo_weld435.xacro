@@ -6,7 +6,7 @@
 -->
 
 <robot xmlns:xacro="http://ros.org/wiki/xacro"
-       name="cobo_weld" >
+       name="coboweld" >
 
   <xacro:arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface"/>
 
@@ -32,14 +32,14 @@
   <link name="torch">  
       <visual>
         <geometry>
-          <mesh filename="package://cobo_weld_support/meshes/collision/STorchRCamKScan.stl"
+          <mesh filename="package://coboweld_support/meshes/collision/STorchRCamKScan.stl"
                 scale="0.001 0.001 0.001"/>
         </geometry>
           <origin xyz="0 0 0" rpy="0 ${pi} 0"/>
       </visual>
       <collision>
         <geometry>
-          <mesh filename="package://cobo_weld_support/meshes/collision/STorchRCamKScan.stl"
+          <mesh filename="package://coboweld_support/meshes/collision/STorchRCamKScan.stl"
                 scale="0.001 0.001 0.001"/>
         </geometry>
           <origin xyz="0 0 0" rpy="0 ${pi} 0"/>
