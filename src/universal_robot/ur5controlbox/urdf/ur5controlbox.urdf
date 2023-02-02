@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-1-g15f4949  Build Version: 1.6.7594.29634
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="ur5controlbox">
+  <link
+    name="ur5controlboxbase_link">
+    <inertial>
+      <origin
+        xyz="-0.212463101276775 -0.00156258641127259 -0.12238237308438"
+        rpy="0 0 0" />
+      <mass
+        value="1.24695240198171" />
+      <inertia
+        ixx="0.016198366895551"
+        ixy="0.000198322840045108"
+        ixz="-0.000168430384496323"
+        iyy="0.0271546182291919"
+        iyz="-6.60365586956822E-05"
+        izz="0.0340473533095709" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://ur5controlbox/meshes/ur5controlboxbase_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://ur5controlbox/meshes/ur5controlboxbase_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+</robot>

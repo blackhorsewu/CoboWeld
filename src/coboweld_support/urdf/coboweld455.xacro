@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <!-- 
-  The xacro file for the UR5 holding Intel Realsense D435i camera together with
+  The xacro file for the UR5 holding Intel Realsense D455 camera together with
   the Fronius Straight Torch as End Effector
 -->
 
@@ -21,7 +21,7 @@
      1. The World, everything lives in it.
      2. The Welding table, our robot arm is installed on it.
      3. The UR5, our robot arm, with the Straight Fronius Torch as its end effector.
-     4. The RealSense D435i attached to the torch holder.
+     4. The RealSense D455 attached to the torch holder.
 -->
 
   <!-- defining tool -->
@@ -79,11 +79,11 @@
      <child link="tail"/>
   </joint>
 
-  <!-- Import the realsense D435i description -->
-  <xacro:include filename="$(find realsense2_description)/urdf/_d435.urdf.xacro" />
-  <xacro:sensor_d435 parent="wrist_3_link" use_nominal_extrinsics="true" name="d435i">
+  <!-- Import the realsense D455 description -->
+  <xacro:include filename="$(find realsense2_description)/urdf/_d455.urdf.xacro" />
+  <xacro:sensor_d455 parent="wrist_3_link" use_nominal_extrinsics="true" name="d455">
     <origin xyz="0.0 -0.0225 0.18515" rpy="0 ${-pi/2} ${pi/2}"/>
-  </xacro:sensor_d435>
+  </xacro:sensor_d455>
 
   <link name="table">
     <visual>
