@@ -5,9 +5,8 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /MotionPlanning1
-        - /MotionPlanning1/Status1
         - /MotionPlanning1/Scene Robot1
+        - /CameraCloud1
         - /TF1/Frames1
         - /TF1/Tree1
         - /Camera1
@@ -412,7 +411,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.0013000000035390258
       Style: Points
-      Topic: /d435i/depth/color/points
+      Topic: /d455/depth/color/points
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -655,7 +654,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 2.9512581825256348
+      Distance: 7.885724067687988
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -671,9 +670,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.29979830980300903
+      Pitch: 0.4847988486289978
       Target Frame: world
-      Yaw: 4.482995986938477
+      Yaw: 0.3647942841053009
     Saved: ~
 Window Geometry:
   Camera:
