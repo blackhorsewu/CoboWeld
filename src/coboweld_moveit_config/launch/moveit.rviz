@@ -6,10 +6,8 @@ Panels:
       Expanded:
         - /Global Options1
         - /MotionPlanning1/Scene Robot1
-        - /CameraCloud1
         - /TF1/Frames1
         - /TF1/Tree1
-        - /Camera1
       Splitter Ratio: 0.5231388211250305
     Tree Height: 494
   - Class: rviz/Help
@@ -654,7 +652,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 7.885724067687988
+      Distance: 3.222703218460083
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -662,17 +660,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.17439141869544983
-        Y: -1.037901759147644
-        Z: -2.2725305370840942e-07
+        X: 0.4238778054714203
+        Y: -0.3965681791305542
+        Z: -9.425087910130969e-07
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.4847988486289978
+      Pitch: 0.25979912281036377
       Target Frame: world
-      Yaw: 0.3647942841053009
+      Yaw: 0.12480092793703079
     Saved: ~
 Window Geometry:
   Camera:
