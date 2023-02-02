@@ -377,6 +377,9 @@ def find_feature_value(feature, pcd, voxel_size):
     pc_number = np.asarray(pcd.points).shape[0]
     feature_value_list = []
     
+    # This is very important. It specifies the attribute that we are using to find the feature
+    # when it is pcd.normals, it is using the normals to find the feature,
+    # when it is pcd.colors, it is using the colours to find the feature.
     # n_list = np.asarray(pcd.normals)
     n_list = np.asarray(pcd.colors)
 
