@@ -8,7 +8,6 @@
 
   Author: Victor W H Wu
   Date: 20 July, 2022.
-        1 February, 2023.
 
   Copyright (c) 2022-2023 Victor W H Wu
 
@@ -25,6 +24,12 @@
     named "robot_ip" is set to the ip address of the robot, it will use the
     real robot to execute the planned action.
 
+  Revision 1: 1 February, 2023.
+
+  Revision 2: 3 February, 2023.
+    Added the argument to publish ordered point clouds when launch the
+    Realsense D455 camera.
+
 -->
 
 <launch>
@@ -32,25 +37,28 @@
   <include file =
     "$(find coboweld_moveit_config)/launch/coboweld_planning_execution455.launch">
 
-<!-- Simulated Robot in RViz -->
+<!-- Simulated Robot in RViz 
     <arg name="sim" default="true" />
-
-<!-- Real Robot 
+-->
+<!-- Real Robot -->
     <arg name="sim" default="false"/>
     <arg name="robot_ip" value="192.168.0.103"/>
--->
+
   </include>
 
 <!--
   22 July, 2022. (Friday)
   1 February, 2023. (Wednesday)
-
   The Intel Realsense D455 camera is added to be launched to show point
   clouds captured.
+
+  3 February, 2023. (Friday)
+  published point clouds will be organized or ordered.
 -->
   <include file="$(find realsense2_camera)/launch/rs_camera.launch" >
     <arg name="camera" value="d455" />
     <arg name="enable_pointcloud" value="true"/>
+    <arg name="ordered_pc" value="true"/>
   </include>
 
 </launch>
