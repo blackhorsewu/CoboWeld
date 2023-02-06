@@ -58,7 +58,7 @@ details are [here](https://answers.ros.org/question/363889/intel-realsens-on-ubu
 I will have to do this anyway if I want to use Realsense, 
 especially if I want to do hand eye calibration. 
 
-Just done the install, reboot and test. ROS and Unistall still 
+Just done the install, reboot and test. ROS and Uninstall still 
 need to be done.
 
 ---
@@ -72,7 +72,52 @@ RobotWeld depends on:
 4. 
 
 
+---
 
+# Universal Robots ROS Driver
+
+When try to launch the `setup455.launch`, it complaint that it is always waiting ro the `scaled_vel_joint_traj_controller` and cannot connect to the `Action client`, with the following errors:
+```
+Waiting for /scaled_vel_joint_traj_controller/follow_joint_trajectory to come up
+
+Action client not connected: /scaled_vel_joint_traj_controller/follow_joint_trajectory
+```
+
+The current driver uses a `scaled_vel_joint_traj_controller`. However, the `ur_robot_driver/launch/ur5_bringup.launch` file, one of the arguments `name="controllers"`, default=, only include the `scaled_pos_joint_traj_controller`. One of the ways to enable the velocity controller is to just change the `pos` to `vel`.
+
+---
+
+# Realsense D455 (6 February 2023)
+
+When launching the system, with the Realsense D455 camera, it always has the following error message:
+```
+(messenger-libusb.cpp:42) control_transfer returned error, index: 768, error: Resource temporarily unavailable, number: 11
+```
+
+When searching with Google, there seems to be quite a lot of people have the same problem. Then a `StefanT83` replied in the [github issues](https://github.com/IntelRealSense/realsense-ros/issues/2386), with the following solution:
+```
+Hi, I got the same type of error indicated in the title, with my D455 on Ubuntu 20.04, and eventually managed to find a solution, so I decided to share my story here. My feeling is that there needs to be a match between the firmware of the D455 (I used 5.12.15.50) and librealsense2 (I used 2.51) and the ROS wrapper.
+Step1. removed any previous install related to 'realsense':
+$ dpkg -l | grep "realsense" | cut -d " " -f 3 | xargs sudo dpkg --purge
+Step2. installed librealsense2 according to https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md > Installing the packages
+Make sure to unplug the sensor at the end, wait 10 seconds, then plug it back again. Test
+$realsense-viewer
+and saw the depth camera is operational.
+Step3. Check version of librealsense that was just installed:
+$dpkg -l|grep realsense
+where I got 2.51
+Step4. Firmware upgrade/downgrade of the D455 to match the librealsense 2.51
+Now my interpretation is that we need to check the column 'SDK ver' on https://dev.intelrealsense.com/docs/firmware-releases and match that to, in my case, librealsense 2.51
+Save the bin file and flash it to the D455 using https://www.intelrealsense.com/developers/ > Firmware update guide > 'Firmware Update Tool (rs-fw-update)'
+Make sure to unplug the sensor, wait 10 seconds, then plug it back again.
+Step5. Install RealSense Wrapper https://github.com/IntelRealSense/realsense-ros > Method 2
+Step6. Test in ROS:
+$roslaunch realsense2_camera rs_camera.launch
+Troubleshooting: in case of errors, unplug the sensor, wait 10 seconds, then plug it back again.
+
+I tested this approach on a D435 and was successful too. It worked on Ubuntu 20.04 native as well as a virtual image on VMWare Player 16.
+Cheers!
+```
 
 
 

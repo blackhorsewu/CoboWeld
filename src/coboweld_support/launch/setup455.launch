@@ -61,4 +61,11 @@
     <arg name="ordered_pc" value="true"/>
   </include>
 
+<!--
+  6 February, 2023. (Monday)
+  launch the DetectGroove node, that does the actual detection.
+-->
+  <node pkg="detectgroove" name="detectgroove" type="detectgroove.py" output="screen">
+  </node>
+
 </launch>
