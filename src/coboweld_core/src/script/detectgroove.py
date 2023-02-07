@@ -12,7 +12,8 @@
 *
 *  Revision 1: 14 November, 2022.
 *     To import Open3d ros helper for open3d and ros point cloud conversions.
-*     The original conversion does not work anymore in ROS Noetic.
+*     The original conversion does not work anymore in ROS Noetic. Details of this
+*     package, refer to README.md.
 *
 *  Revision 2: 16 November, 2022.
 *     The function select_down_sample was replaced by select_by_index in Open3d
@@ -330,7 +331,7 @@ def detect_groove_workflow(pcd):
 
 #    print("\n ************* Before cropping ************* ")
 #    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d455_depth_optical_frame")
-    pub_captured.publish(rviz_cloud)
+#    pub_captured.publish(rviz_cloud)
 
     pcd = pcd.voxel_down_sample(voxel_size = voxel_size)
     pcd = pcd.crop(bbox)
@@ -401,52 +402,44 @@ def detect_groove_workflow(pcd):
     rviz_cloud = orh.o3dpc_to_rospc(generated_path, frame_id="d455_depth_optical_frame")
     pub_path.publish(rviz_cloud)
 
-# Node detect_groove class.
-class DetectGroove():
-  # Must have __init__(self) function for a class, similar to a C++ class constructor.
-  def __init__(self):
-      
-    global received_ros_cloud, delete_percentage
-
-    # delete_percentage = 0.95 ORIGINAL VALUE
-    delete_percentage = 0.96
-
-    received_ros_cloud = None
-
-    # Setup subscriber
-    rospy.Subscriber('/d455/depth/color/points', PointCloud2, 
-                      callback_roscloud, queue_size=1
-                    )
-
-    # Setup publishers
-    pub_captured = rospy.Publisher("capture", PointCloud2, queue_size=1)
-    pub_selected = rospy.Publisher("selected", PointCloud2, queue_size=1)
-    pub_clustered = rospy.Publisher("clustered", PointCloud2, queue_size=1)
-    pub_pc = rospy.Publisher("downsampled_points", PointCloud2, queue_size=1)
-    pub_path = rospy.Publisher("path", PointCloud2, queue_size=1)
-
-    while not rospy.is_shutdown():
-
-      if not received_ros_cloud is None:
-        print("\n ************* Start groove detection *************")
-        received_open3d_cloud = orh.rospc_to_o3dpc(received_ros_cloud)
-
-        print("\n ************* Before anything ************* ")
-        rviz_cloud = orh.o3dpc_to_rospc(received_open3d_cloud, 
-                                        frame_id="d455_depth_optical_frame")
-        pub_captured.publish(rviz_cloud)
-
-        detect_groove_workflow(received_open3d_cloud)
-
 
 # Main function.
 if __name__ == "__main__":
   # Initialize the node and name it.
   rospy.init_node('coboweld_core')
 
-  # Invoke the class functions that do all the real work. Do error checking.
-  try:
-    dg = DetectGroove()
-  except rospy.ROSInitException: pass
+  # Must have __init__(self) function for a class, similar to a C++ class constructor.
+  global received_ros_cloud, delete_percentage
+
+  # delete_percentage = 0.95 ORIGINAL VALUE
+  delete_percentage = 0.96
+
+  received_ros_cloud = None
+
+  # Setup subscriber
+  rospy.Subscriber('/d455/depth/color/points', PointCloud2, 
+                    callback_roscloud, queue_size=1
+                  )
+
+  # Setup publishers
+  pub_captured = rospy.Publisher("captured", PointCloud2, queue_size=1)
+  pub_selected = rospy.Publisher("selected", PointCloud2, queue_size=1)
+  pub_clustered = rospy.Publisher("clustered", PointCloud2, queue_size=1)
+  pub_pc = rospy.Publisher("downsampled_points", PointCloud2, queue_size=1)
+  pub_path = rospy.Publisher("path", PointCloud2, queue_size=1)
+
+  while not rospy.is_shutdown():
+
+    if not received_ros_cloud is None:
+      print("\n ************* Start groove detection *************")
+      received_open3d_cloud = orh.rospc_to_o3dpc(received_ros_cloud)
+
+      print("\n ************* Before anything ************* ")
+      rviz_cloud = orh.o3dpc_to_rospc(received_open3d_cloud, 
+                                      frame_id="d455_depth_optical_frame")
+      pub_captured.publish(rviz_cloud)
+
+      detect_groove_workflow(received_open3d_cloud)
+
 
 

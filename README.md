@@ -119,6 +119,21 @@ I tested this approach on a D435 and was successful too. It worked on Ubuntu 20.
 Cheers!
 ```
 
+# open3d_ros_helper
+7 February 2023.
+
+Both Open3d and ROS are used in CoboWeld, the two platforms use different formats for their Point Clouds. Therefore, there is a need to convert Point Clouds between the 2 systems. There is now a package `open3d_ros_helper` that provides conversion routines and works with Open3d, ROS Noetic and Python 3. 
+
+It is necessary to install a package `ros-noetic-ros-numpy` first. Then install other dependencies as follow:
+```
+pip3 install numpy==1.20 open3d opencv-python pyrsistent
+pip3 install open3d_ros_helper
+```
+
+Then comes the crucial part. When we look at the github for the [open_3d_helper](https://github.com/SeungBack/open3d-ros-helper), we find there is a commit remark `cloud_array ravel added to rospc_to_o3dpc`. `rospc_to_o3dpc` is exactly the function that is needed to convert ROS pointcloud2 to Open3d point clouds. After getting into the folder of `open3d_ros_helper`, there is the `open3d_ros_helper.py` file with a commit remark next to this file name. When this remark is clicked, it will show exactly where has been changed on the date `1 April 2021`. On line 261 of this file, `.ravel()` was added to the end.
+
+It is absolutely important to follow this and add this `.ravel()` to the end of line 261 in the file `~/.local/lib/python3.8/site-packages/open3d_ros_helper/open3d_ros_helper.py`. Otherwise, when the program is run, a RuntimeError will complaint that `o3d.colors = open3d.utility.Vector3dVector(rgb_npy)`.
+
 
 
 
