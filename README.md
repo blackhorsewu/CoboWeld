@@ -117,7 +117,8 @@ Troubleshooting: in case of errors, unplug the sensor, wait 10 seconds, then plu
 
 I tested this approach on a D435 and was successful too. It worked on Ubuntu 20.04 native as well as a virtual image on VMWare Player 16.
 Cheers!
-```
+``` 
+
 
 # open3d_ros_helper
 7 February 2023.
