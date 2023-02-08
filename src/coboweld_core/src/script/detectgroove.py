@@ -322,8 +322,8 @@ def detect_groove_workflow(pcd):
     # 1. Down sample the point cloud
     ## a. Define a bounding box for cropping
     bbox = o3d.geometry.AxisAlignedBoundingBox(
-        min_bound = (-0.025, -0.5, 0), # x right, y down, z forward; for the camera
-        max_bound = (0.05, 0.05, 0.5)  # 50mm x 50mm plane with 0.5m depth
+        min_bound = (-0.02, -0.7, 0), # x right, y down, z forward; for the camera
+        max_bound = (0.1, 0.07, 0.5)  # 50mm x 50mm plane with 0.5m depth
     )
 
     ## b. Define voxel size
@@ -333,16 +333,18 @@ def detect_groove_workflow(pcd):
 #    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d455_depth_optical_frame")
 #    pub_captured.publish(rviz_cloud)
 
+    input("\nIf you want to crop, hit enter:")
     pcd = pcd.voxel_down_sample(voxel_size = voxel_size)
     pcd = pcd.crop(bbox)
 
-    print("\n ************* After cropping ************* ")
-    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d455_depth_optical_frame")
-#    pub_captured.publish(rviz_cloud)
-
+    input("\nHit enter to carry on.")
     ### it was remove_none_finite_points in Open3D version 0.8.0... but
     ### it is  remove_non_finite_points  in Open3D version 0.15.1...
     pcd.remove_non_finite_points()
+    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d455_depth_optical_frame")
+    pub_captured.publish(rviz_cloud)
+    print("\nNon finite points removed.")
+    input("\nHit enter to carry on.")
 
     ## c. Count the number of points afterwards
     pc_number = np.asarray(pcd.points).shape[0]
@@ -428,18 +430,19 @@ if __name__ == "__main__":
   pub_pc = rospy.Publisher("downsampled_points", PointCloud2, queue_size=1)
   pub_path = rospy.Publisher("path", PointCloud2, queue_size=1)
 
+  print("\n ************* Start *************")
+
   while not rospy.is_shutdown():
 
     if not received_ros_cloud is None:
-      print("\n ************* Start groove detection *************")
       received_open3d_cloud = orh.rospc_to_o3dpc(received_ros_cloud)
 
-      print("\n ************* Before anything ************* ")
       rviz_cloud = orh.o3dpc_to_rospc(received_open3d_cloud, 
                                       frame_id="d455_depth_optical_frame")
       pub_captured.publish(rviz_cloud)
 
       detect_groove_workflow(received_open3d_cloud)
 
+  print("\n ************* End ************* ")
 
 
