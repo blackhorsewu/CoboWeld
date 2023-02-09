@@ -328,8 +328,8 @@ def detect_groove_workflow(pcd):
     # 1. Down sample the point cloud
     ## a. Define a bounding box for cropping
     bbox = o3d.geometry.AxisAlignedBoundingBox(
-        min_bound = (-0.02, -0.7, 0), # x right, y down, z forward; for the camera
-        max_bound = (0.1, 0.07, 0.5)  # 50mm x 50mm plane with 0.5m depth
+        min_bound = (-0.03, -0.7, 0), # x right, y down, z forward; for the camera
+        max_bound = (0.05, 0.07, 0.5)  # 50mm x 50mm plane with 0.5m depth
     )
 
     ## b. Define voxel size
@@ -453,5 +453,5 @@ if __name__ == "__main__":
       detect_groove_workflow(received_open3d_cloud)
 
   print("\n ************* End ************* ")
-
+  rospy.signal_shutdown("Finished shutting down")
 
