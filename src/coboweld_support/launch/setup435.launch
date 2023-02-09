@@ -30,12 +30,15 @@
     Added the argument to publish ordered point clouds when launch the
     Realsense D455 camera.
 
+  Revision 3: 9 February, 2023.
+    Changed the camera from D455 back to D435
+
 -->
 
 <launch>
 <!---->
   <include file =
-    "$(find coboweld_moveit_config)/launch/coboweld_planning_execution455.launch">
+    "$(find coboweld435_moveit_config)/launch/coboweld_planning_execution435.launch">
 
 <!-- Simulated Robot in RViz 
     <arg name="sim" default="true" />
@@ -55,8 +58,11 @@
   3 February, 2023. (Friday)
   published point clouds will be organized or ordered.
 
+  9 February, 2023. (Thursday)
+  Changed the camera D455 back to D435
+
   <include file="$(find realsense2_camera)/launch/rs_camera.launch" >
-    <arg name="camera" value="D455" />
+    <arg name="camera" value="D435" />
     <arg name="enable_pointcloud" value="true"/>
     <arg name="ordered_pc" value="true"/>
     <arg name="initial_reset" value="true"/>

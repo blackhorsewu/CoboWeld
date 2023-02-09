@@ -1,21 +1,37 @@
 Panels:
   - Class: rviz/Displays
-    Help Height: 0
+    Help Height: 102
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Capture1
+        - /Status1
+        - /MotionPlanning1
+        - /MotionPlanning1/Scene Robot1
         - /TF1/Frames1
-        - /TF1/Tree1
-      Splitter Ratio: 0.7142857313156128
-    Tree Height: 494
-  - Class: rviz/Help
-    Name: Help
+        - /Camera1
+        - /Camera1/Status1
+        - /PointCloud21
+        - /PointCloud21/Status1
+      Splitter Ratio: 0.5472837090492249
+    Tree Height: 324
+  - Class: rviz/Selection
+    Name: Selection
+  - Class: rviz/Tool Properties
+    Expanded:
+      - /2D Pose Estimate1
+      - /2D Nav Goal1
+      - /Publish Point1
+    Name: Tool Properties
+    Splitter Ratio: 0.5886790156364441
   - Class: rviz/Views
     Expanded:
       - /Current View1
     Name: Views
     Splitter Ratio: 0.5
+  - Class: rviz/Time
+    Name: Time
+    SyncMode: 0
+    SyncSource: Camera
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -24,7 +40,7 @@ Visualization Manager:
   Class: ""
   Displays:
     - Alpha: 0.5
-      Cell Size: 0.10000000149011612
+      Cell Size: 1
       Class: rviz/Grid
       Color: 160; 160; 164
       Enabled: true
@@ -38,10 +54,10 @@ Visualization Manager:
         Y: 0
         Z: 0
       Plane: XY
-      Plane Cell Count: 30
-      Reference Frame: table
+      Plane Cell Count: 10
+      Reference Frame: <Fixed Frame>
       Value: true
-    - Acceleration_Scaling_Factor: 1
+    - Acceleration_Scaling_Factor: 0.1
       Class: moveit_rviz_plugin/MotionPlanning
       Enabled: true
       Move Group Namespace: ""
@@ -52,7 +68,7 @@ Visualization Manager:
       MoveIt_Planning_Attempts: 10
       MoveIt_Planning_Time: 5
       MoveIt_Use_Cartesian_Path: false
-      MoveIt_Use_Constraint_Aware_IK: true
+      MoveIt_Use_Constraint_Aware_IK: false
       MoveIt_Workspace:
         Center:
           X: 0
@@ -85,63 +101,43 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          d455_accel_frame:
+          d435_bottom_screw_frame:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          d455_accel_optical_frame:
+          d435_color_frame:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          d455_bottom_screw_frame:
+          d435_color_optical_frame:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          d455_color_frame:
+          d435_depth_frame:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          d455_color_optical_frame:
+          d435_depth_optical_frame:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          d455_depth_frame:
+          d435_infra1_frame:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          d455_depth_optical_frame:
+          d435_infra1_optical_frame:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          d455_gyro_frame:
+          d435_infra2_frame:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          d455_gyro_optical_frame:
+          d435_infra2_optical_frame:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          d455_imu_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          d455_infra1_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          d455_infra1_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          d455_infra2_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          d455_infra2_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          d455_link:
+          d435_link:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -209,7 +205,7 @@ Visualization Manager:
         Show Robot Collision: false
         Show Robot Visual: true
         Show Trail: false
-        State Display Time: 0.05 s
+        State Display Time: 3x
         Trail Step Size: 1
         Trajectory Topic: move_group/display_planned_path
         Use Sim Time: false
@@ -224,7 +220,7 @@ Visualization Manager:
         Colliding Link Color: 255; 0; 0
         Goal State Alpha: 1
         Goal State Color: 250; 128; 0
-        Interactive Marker Size: 0.20000000298023224
+        Interactive Marker Size: 0
         Joint Violation Color: 255; 0; 255
         Planning Group: manipulator
         Query Goal State: false
@@ -235,9 +231,9 @@ Visualization Manager:
       Planning Scene Topic: move_group/monitored_planning_scene
       Robot Description: robot_description
       Scene Geometry:
-        Scene Alpha: 1
+        Scene Alpha: 0.8999999761581421
         Scene Color: 50; 230; 50
-        Scene Display Time: 0.20000000298023224
+        Scene Display Time: 0.009999999776482582
         Show Scene Geometry: true
         Voxel Coloring: Z-Axis
         Voxel Rendering: Occupied Voxels
@@ -262,63 +258,43 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          d455_accel_frame:
+          d435_bottom_screw_frame:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          d455_accel_optical_frame:
+          d435_color_frame:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          d455_bottom_screw_frame:
+          d435_color_optical_frame:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          d455_color_frame:
+          d435_depth_frame:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          d455_color_optical_frame:
+          d435_depth_optical_frame:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          d455_depth_frame:
+          d435_infra1_frame:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          d455_depth_optical_frame:
+          d435_infra1_optical_frame:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          d455_gyro_frame:
+          d435_infra2_frame:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          d455_gyro_optical_frame:
+          d435_infra2_optical_frame:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          d455_imu_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          d455_infra1_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          d455_infra1_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          d455_infra2_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          d455_infra2_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          d455_link:
+          d435_link:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -384,7 +360,124 @@ Visualization Manager:
         Show Robot Collision: false
         Show Robot Visual: true
       Value: true
-      Velocity_Scaling_Factor: 1
+      Velocity_Scaling_Factor: 0.1
+    - Class: rviz/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: false
+        base:
+          Value: false
+        base_link:
+          Value: false
+        base_link_inertia:
+          Value: false
+        d435_bottom_screw_frame:
+          Value: false
+        d435_color_frame:
+          Value: false
+        d435_color_optical_frame:
+          Value: false
+        d435_depth_frame:
+          Value: false
+        d435_depth_optical_frame:
+          Value: true
+        d435_infra1_frame:
+          Value: false
+        d435_infra1_optical_frame:
+          Value: false
+        d435_infra2_frame:
+          Value: false
+        d435_infra2_optical_frame:
+          Value: false
+        d435_link:
+          Value: false
+        flange:
+          Value: false
+        forearm_link:
+          Value: false
+        shoulder_link:
+          Value: false
+        table:
+          Value: false
+        tail:
+          Value: false
+        tool0:
+          Value: false
+        tool0_controller:
+          Value: false
+        torch:
+          Value: false
+        upper_arm_link:
+          Value: false
+        world:
+          Value: false
+        wrist_1_link:
+          Value: false
+        wrist_2_link:
+          Value: false
+        wrist_3_link:
+          Value: false
+      Marker Alpha: 1
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        world:
+          table:
+            base_link:
+              base:
+                tool0_controller:
+                  {}
+              base_link_inertia:
+                shoulder_link:
+                  upper_arm_link:
+                    forearm_link:
+                      wrist_1_link:
+                        wrist_2_link:
+                          wrist_3_link:
+                            d435_bottom_screw_frame:
+                              d435_link:
+                                d435_color_frame:
+                                  d435_color_optical_frame:
+                                    {}
+                                d435_depth_frame:
+                                  d435_depth_optical_frame:
+                                    {}
+                                d435_infra1_frame:
+                                  d435_infra1_optical_frame:
+                                    {}
+                                d435_infra2_frame:
+                                  d435_infra2_optical_frame:
+                                    {}
+                            flange:
+                              tool0:
+                                {}
+                            tail:
+                              {}
+                            torch:
+                              {}
+      Update Interval: 0
+      Value: true
+    - Class: rviz/Camera
+      Enabled: false
+      Image Rendering: background and overlay
+      Image Topic: /d435/color/image_raw
+      Name: Camera
+      Overlay Alpha: 0.5
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: false
+      Visibility:
+        Grid: true
+        MotionPlanning: true
+        PointCloud2: true
+        TF: true
+        Value: true
+      Zoom Factor: 1
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -401,240 +494,18 @@ Visualization Manager:
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
-      Name: CameraCloud
+      Name: PointCloud2
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 5
-      Size (m): 0.0013000000035390258
+      Size (Pixels): 3
+      Size (m): 0.009999999776482582
       Style: Points
-      Topic: /d455/depth/color/points
+      Topic: /d435/depth/color/points
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: z
-      Class: rviz/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: RGB8
-      Decay Time: 0
-      Enabled: false
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Min Color: 0; 0; 0
-      Name: Capture
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 5
-      Size (m): 0.003000000026077032
-      Style: Points
-      Topic: /captured
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: false
-      Value: false
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: Intensity
-      Decay Time: 0
-      Enabled: false
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Min Color: 0; 0; 0
-      Name: Transformed
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 10
-      Size (m): 0.0020000000949949026
-      Style: Boxes
-      Topic: /transformed
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: false
-    - Alpha: 1
-      Arrow Length: 0.30000001192092896
-      Axes Length: 0.009999999776482582
-      Axes Radius: 0.0005000000237487257
-      Class: rviz/PoseArray
-      Color: 200; 100; 0
-      Enabled: false
-      Head Length: 0.0020000000949949026
-      Head Radius: 0.0010000000474974513
-      Name: TrajectoryPose
-      Queue Size: 10
-      Shaft Length: 0.000699999975040555
-      Shaft Radius: 0.000699999975040555
-      Shape: Axes
-      Topic: /pose_trajectory
-      Unreliable: false
-      Value: false
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: RGB8
-      Decay Time: 0
-      Enabled: false
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Min Color: 0; 0; 0
-      Name: Trajectory
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.003000000026077032
-      Style: Spheres
-      Topic: /trajectory
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: false
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: RGB8
-      Decay Time: 0
-      Enabled: false
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Min Color: 0; 0; 0
-      Name: Groove
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.003000000026077032
-      Style: Spheres
-      Topic: /groove_points
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: false
-    - Class: rviz/MarkerArray
-      Enabled: false
-      Marker Topic: /sequences
-      Name: Sequences
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: false
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: RGB8
-      Decay Time: 0
-      Enabled: false
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Min Color: 0; 0; 0
-      Name: DownSampled
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.0013000000035390258
-      Style: Spheres
-      Topic: /downsampled_points
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: false
-    - Class: rviz/TF
-      Enabled: false
-      Frame Timeout: 15
-      Frames:
-        All Enabled: false
-      Marker Alpha: 1
-      Marker Scale: 0.20000000298023224
-      Name: TF
-      Show Arrows: true
-      Show Axes: true
-      Show Names: true
-      Tree:
-        {}
-      Update Interval: 0
-      Value: false
-    - Alpha: 1
-      Arrow Length: 0.30000001192092896
-      Axes Length: 0.009999999776482582
-      Axes Radius: 0.0010000000474974513
-      Class: rviz/PoseArray
-      Color: 255; 25; 0
-      Enabled: false
-      Head Length: 0.07000000029802322
-      Head Radius: 0.029999999329447746
-      Name: My pose
-      Queue Size: 10
-      Shaft Length: 0.23000000417232513
-      Shaft Radius: 0.009999999776482582
-      Shape: Axes
-      Topic: /my_pose
-      Unreliable: false
-      Value: false
-    - Class: rviz/Camera
-      Enabled: false
-      Image Rendering: background and overlay
-      Image Topic: /d455/color/image_raw
-      Name: Camera
-      Overlay Alpha: 0.5
-      Queue Size: 2
-      Transport Hint: raw
-      Unreliable: false
-      Value: false
-      Visibility:
-        CameraCloud: true
-        Capture: true
-        DownSampled: true
-        Grid: false
-        Groove: true
-        MotionPlanning: false
-        My pose: true
-        Sequences: true
-        TF: false
-        Trajectory: true
-        TrajectoryPose: true
-        Transformed: true
-        Value: true
-      Zoom Factor: 1
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -647,11 +518,23 @@ Visualization Manager:
       Hide Inactive Objects: true
     - Class: rviz/MoveCamera
     - Class: rviz/Select
+    - Class: rviz/FocusCamera
+    - Class: rviz/Measure
+    - Class: rviz/SetInitialPose
+      Theta std deviation: 0.2617993950843811
+      Topic: /initialpose
+      X std deviation: 0.5
+      Y std deviation: 0.5
+    - Class: rviz/SetGoal
+      Topic: /move_base_simple/goal
+    - Class: rviz/PublishPoint
+      Single click: true
+      Topic: /clicked_point
   Value: true
   Views:
     Current:
-      Class: rviz/XYOrbit
-      Distance: 1.6035940647125244
+      Class: rviz/Orbit
+      Distance: 2.2793591022491455
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -659,17 +542,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.7109971642494202
-        Y: 0.04576148837804794
-        Z: -5.252762775853625e-07
+        X: 1.3432857990264893
+        Y: -0.09681960940361023
+        Z: 0.05765165761113167
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8852033615112305
-      Target Frame: world
-      Yaw: 1.5646873712539673
+      Pitch: 0.5853983163833618
+      Target Frame: <Fixed Frame>
+      Yaw: 2.235396385192871
     Saved: ~
 Window Geometry:
   Camera:
@@ -677,15 +560,19 @@ Window Geometry:
   Displays:
     collapsed: false
   Height: 1043
-  Help:
-    collapsed: false
   Hide Left Dock: false
   Hide Right Dock: false
   MotionPlanning:
     collapsed: false
   MotionPlanning - Trajectory Slider:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000100000000000001f3000003b9fc0200000008fb000000100044006900730070006c006100790073010000003d0000022b000000c900fffffffb0000000800480065006c00700000000342000000bb0000006e00fffffffb0000000a0056006900650077007300000003b0000000b0000000a400fffffffb0000000c00430061006d0065007200610200000b2a0000020300000280000001e0fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000001600000016fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e0067010000026e000001880000017d00fffffffb0000000c00430061006d0065007200610200000b320000014c000002b40000024300000587000003b900000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001f300000375fc020000000cfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d000001e7000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb000000280020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e0067010000022a000001880000017d00fffffffb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000001600000016fb0000000c00430061006d00650072006102000008410000025800000280000001e0000000010000010f000002b0fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d000002b0000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000003efc0100000002fb0000000800540069006d0065010000000000000780000003bc00fffffffb0000000800540069006d00650100000000000004500000000000000000000005870000037500000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Selection:
+    collapsed: false
+  Time:
+    collapsed: false
+  Tool Properties:
+    collapsed: false
   Views:
     collapsed: false
   Width: 1920

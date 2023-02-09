@@ -22,6 +22,9 @@
 *  Revision 3: 3 February, 2023.
 *     Moved the code from cncweld_core to CoboWeld.
 *
+*  Revision 4: 9 February, 2023.
+*     Introduce URx into CoboWeld.
+*
 *  Copyright (c) 2022-2023 Victor W H Wu
 *
 *  Description:
@@ -34,7 +37,8 @@
 *  numpy, 
 *  open3d, 
 *  math,
-*  open3d_ros_helper
+*  open3d_ros_helper,
+*  urx
 *
 '''
 # Imports for ROS
@@ -53,6 +57,8 @@ import sensor_msgs.point_cloud2 as pc2
 import vg # Vector Geometry
 from scipy import interpolate
 import scipy.spatial as spatial
+
+import urx
 
 
 
@@ -330,7 +336,7 @@ def detect_groove_workflow(pcd):
     voxel_size = 0.001 # 1mm cube for each voxel
 
 #    print("\n ************* Before cropping ************* ")
-#    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d455_depth_optical_frame")
+#    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
 #    pub_captured.publish(rviz_cloud)
 
     input("\nIf you want to crop, hit enter:")
@@ -341,7 +347,7 @@ def detect_groove_workflow(pcd):
     ### it was remove_none_finite_points in Open3D version 0.8.0... but
     ### it is  remove_non_finite_points  in Open3D version 0.15.1...
     pcd.remove_non_finite_points()
-    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d455_depth_optical_frame")
+    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
     pub_captured.publish(rviz_cloud)
     print("\nNon finite points removed.")
     input("\nHit enter to carry on.")
@@ -361,7 +367,7 @@ def detect_groove_workflow(pcd):
     pcd.orient_normals_towards_camera_location(camera_location = [0., 0., 0.])
 
     # 3. Use different geometry features to find groove
-#    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d455_depth_optical_frame")
+#    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
 #    pub_transformed.publish(rviz_cloud)
 
     feature_value_list = find_feature_value(pcd, voxel_size)
@@ -371,7 +377,7 @@ def detect_groove_workflow(pcd):
     delete_points = int(pc_number * delete_percentage)
 
 #    print("\n ************* Feature Points ************* ")
-#    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d455_depth_optical_frame")
+#    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
 #    pub_pc.publish(rviz_cloud)
 
 #    pcd_selected = pcd.select_down_sample(
@@ -387,13 +393,13 @@ def detect_groove_workflow(pcd):
     )
 
     # pcd_selected.paint_uniform_color([0, 1, 0])
-    rviz_cloud = orh.o3dpc_to_rospc(pcd_selected, frame_id="d455_depth_optical_frame")
+    rviz_cloud = orh.o3dpc_to_rospc(pcd_selected, frame_id="d435_depth_optical_frame")
     pub_selected.publish(rviz_cloud)
     groove = cluster_groove_from_point_cloud(pcd_selected, voxel_size)
 
     print("\n ************* Groove ************* ")
     # groove = groove.paint_uniform_color([0, 1, 0])
-    rviz_cloud = orh.o3dpc_to_rospc(groove, frame_id="d455_depth_optical_frame")
+    rviz_cloud = orh.o3dpc_to_rospc(groove, frame_id="d435_depth_optical_frame")
     pub_clustered.publish(rviz_cloud)
 
     # 5. Generate a path from the clustered Groove
@@ -401,14 +407,17 @@ def detect_groove_workflow(pcd):
     generated_path = generate_path(groove)
     generated_path = generated_path.paint_uniform_color([0, 0, 1])
 
-    rviz_cloud = orh.o3dpc_to_rospc(generated_path, frame_id="d455_depth_optical_frame")
+    rviz_cloud = orh.o3dpc_to_rospc(generated_path, frame_id="d435_depth_optical_frame")
     pub_path.publish(rviz_cloud)
 
 
 # Main function.
 if __name__ == "__main__":
   # Initialize the node and name it.
-  rospy.init_node('coboweld_core')
+  rospy.init_node('coboweld_core', anonymous=True)
+
+  # Start URx
+  robot = urx.Robot("192.168.0.103")
 
   # Must have __init__(self) function for a class, similar to a C++ class constructor.
   global received_ros_cloud, delete_percentage
@@ -419,7 +428,7 @@ if __name__ == "__main__":
   received_ros_cloud = None
 
   # Setup subscriber
-  rospy.Subscriber('/d455/depth/color/points', PointCloud2, 
+  rospy.Subscriber('/d435/depth/color/points', PointCloud2, 
                     callback_roscloud, queue_size=1
                   )
 
@@ -438,7 +447,7 @@ if __name__ == "__main__":
       received_open3d_cloud = orh.rospc_to_o3dpc(received_ros_cloud)
 
       rviz_cloud = orh.o3dpc_to_rospc(received_open3d_cloud, 
-                                      frame_id="d455_depth_optical_frame")
+                                      frame_id="d435_depth_optical_frame")
       pub_captured.publish(rviz_cloud)
 
       detect_groove_workflow(received_open3d_cloud)

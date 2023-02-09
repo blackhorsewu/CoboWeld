@@ -29,9 +29,41 @@ CoboWeld itself has a sub-package, coboweld_support, that provide all the suppor
 # The MoveIt package of ROS
 On the ROS platform there is a package, MoveIt, that helps to plan and move the manipulator UR5, in both the virtual world in RViz and in the real world.
 
-Before it can be used it must be installed and configured. It also provides a moveit_setup_assistant to do the setup for it.
+Before it can be used it must be installed and configured. It also provides a `moveit_setup_assistant` to do the setup for it.
 
-Afterwards, it will generate a package, in the case of coboweld, coboweld_moveit_config.This is a project of the CNERC
+Invoke the `setup assistant`:
+```
+roslaunch moveit_setup_assistant setup_assistant.launch
+```
+
+Once it is invoked, click `Create New MoveIt Configuration Package`. It is also necessary to load a URDF:
+```
+~/CoboWeld/src/coboweld_support/urdf/coboweld435.xacro
+```
+After the URDF is loaded:
+1. it will be in the `Self-Collisions` tab, click `Generate Collision Matrix`
+2. `Virtual Joints` tab, click `Add Virtual Joint`. Virtual Joint Name should be set to `FixedBase`, Parent Frame Name set to `world`. Then push the `Save` button
+3. `Planning Groups` tab, click `Add Group`. Group Name `manipulator`. Kinematic Solver `ur_kinematics/UR5KinematicsPlugin`. Click the `Add Kin. Chain` button, then click `Expand All` button at the bottom. Choose `base_link` and click the `Choose Selected` button for the `Base Link` field. Then choose `torch` and click the `Choose Selected` button for the `Tip Link` field. Finally, click `Save` button.
+4. `Robot Poses` tab, Click `Add Pose` button. Fill in the `Pose Name` field with `up`, then move the robot all the way up by:
+ * `shoulder_pan_joint`: 1.5708
+ * `shoulder_lift_joint`: -1.5708
+ * `wrist_1_joint`: -1.5708   
+push the `Save` button.
+5. Add one more `Robot Poses` and call it `home`:
+6. Go to `Author Information` tab and fill it in.
+7. Configuration Files tab. For the `Save Path` put down `src/coboweld435_moveit_config`
+8. Press the `Generate Package` button. It will then complaint `No end effectors have been added`, just press `OK`. It will then display `Configuration package generated successfully!`
+9. Exit SEtup Assistant.
+
+
+
+
+
+Afterwards, it will generate a package, in the case of coboweld, coboweld_moveit_config. 
+
+---
+
+This is a project of the CNERC
 ## Chinese National Engineering Research Centre for Steel Structure (Hong Kong Branch)
 
 
