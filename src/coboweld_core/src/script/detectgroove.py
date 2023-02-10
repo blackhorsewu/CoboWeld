@@ -89,6 +89,9 @@ def find_feature_value(pcd, voxel_size):
 
     feature_value_list = []
     
+    # This is very important. It specifies the attribute that we are using to find the feature
+    # when it is pcd.normals, it is using the normals to find the feature,
+    # when it is pcd.colors, it is using the colours to find the feature.
     # n_list is an array of normals of all the points
     n_list = np.asarray(pcd.normals)
     # n_list = np.asarray(pcd.colors)
@@ -328,7 +331,7 @@ def detect_groove_workflow(pcd):
     # 1. Down sample the point cloud
     ## a. Define a bounding box for cropping
     bbox = o3d.geometry.AxisAlignedBoundingBox(
-        min_bound = (-0.03, -0.7, 0), # x right, y down, z forward; for the camera
+        min_bound = (-0.03, -0.07, 0), # x right, y down, z forward; for the camera
         max_bound = (0.05, 0.07, 0.5)  # 50mm x 50mm plane with 0.5m depth
     )
 
@@ -339,18 +342,15 @@ def detect_groove_workflow(pcd):
 #    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
 #    pub_captured.publish(rviz_cloud)
 
-    input("\nIf you want to crop, hit enter:")
     pcd = pcd.voxel_down_sample(voxel_size = voxel_size)
     pcd = pcd.crop(bbox)
 
-    input("\nHit enter to carry on.")
     ### it was remove_none_finite_points in Open3D version 0.8.0... but
     ### it is  remove_non_finite_points  in Open3D version 0.15.1...
     pcd.remove_non_finite_points()
+    input("Point cloud cropped.\nHit enter to continue.")
     rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
     pub_captured.publish(rviz_cloud)
-    print("\nNon finite points removed.")
-    input("\nHit enter to carry on.")
 
     ## c. Count the number of points afterwards
     pc_number = np.asarray(pcd.points).shape[0]
@@ -359,26 +359,20 @@ def detect_groove_workflow(pcd):
     # 2. Estimate normal toward camera location and normalize it.
     pcd.estimate_normals(
         search_param = o3d.geometry.KDTreeSearchParamHybrid(
-            radius = 0.01,
-            max_nn = 30
+            radius = 0.015,
+            max_nn = 100
         )
     )
     pcd.normalize_normals()
-    pcd.orient_normals_towards_camera_location(camera_location = [0., 0., 0.])
+    pcd.orient_normals_towards_camera_location(camera_location = [0.0, 0.0, 0.0])
 
     # 3. Use different geometry features to find groove
-#    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
-#    pub_transformed.publish(rviz_cloud)
-
+    #    Use asymmetric normals as a feature to find groove
     feature_value_list = find_feature_value(pcd, voxel_size)
     normalized_feature_value_list = normalize_feature(feature_value_list)
 
     # 4. Delete low value points and cluster
     delete_points = int(pc_number * delete_percentage)
-
-#    print("\n ************* Feature Points ************* ")
-#    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
-#    pub_pc.publish(rviz_cloud)
 
 #    pcd_selected = pcd.select_down_sample(
     pcd_selected = pcd.select_by_index(
@@ -392,9 +386,11 @@ def detect_groove_workflow(pcd):
         ## with the top 5 percent feature value
     )
 
+    input("Featured points selected.\nHit enter to show selected.")
     # pcd_selected.paint_uniform_color([0, 1, 0])
     rviz_cloud = orh.o3dpc_to_rospc(pcd_selected, frame_id="d435_depth_optical_frame")
     pub_selected.publish(rviz_cloud)
+
     groove = cluster_groove_from_point_cloud(pcd_selected, voxel_size)
 
     print("\n ************* Groove ************* ")
@@ -453,5 +449,8 @@ if __name__ == "__main__":
       detect_groove_workflow(received_open3d_cloud)
 
   print("\n ************* End ************* ")
+  robot.stop()
+  # close the communication, otherwise python will not shutdown properly
+  robot.close()
   rospy.signal_shutdown("Finished shutting down")
 
