@@ -93,13 +93,14 @@ def find_feature_value(pcd, voxel_size):
     # when it is pcd.normals, it is using the normals to find the feature,
     # when it is pcd.colors, it is using the colours to find the feature.
     # n_list is an array of normals of all the points
-    n_list = np.asarray(pcd.normals)
-    # n_list = np.asarray(pcd.colors)
+    # n_list = np.asarray(pcd.normals)
+    n_list = np.asarray(pcd.colors)
 
     # a // b = integer quotient of a divided by b
     # so neighbor (number of neighbors) whichever is smaller of 30 or the quotient 
     # of dividing the number of points by 100
-    neighbour = min(pc_number//100, 30)
+    # neighbour = min(pc_number//100, 30)
+    neighbour = min(pc_number//50, 100)
     
     # for every point of the point cloud
     for index in range(pc_number):
@@ -131,7 +132,8 @@ def cluster_groove_from_point_cloud(pcd, voxel_size, verbose=False):
     # returns an array of labels, each label is a number. 
     # labels of the same cluster have their labels the same number.
     # if this number is -1, that is this cluster is noise.
-    labels = np.array(pcd.cluster_dbscan(eps=0.005, min_points=3, print_progress=True))
+    # labels = np.array(pcd.cluster_dbscan(eps=0.005, min_points=3, print_progress=True))
+    labels = np.array(pcd.cluster_dbscan(eps=0.005, min_points=3, print_progress=False))
 
     # np.unique returns unique labels, label_counts is an array of number of that label
     label, label_counts = np.unique(labels, return_counts=True)
@@ -163,7 +165,7 @@ def cluster_groove_from_point_cloud(pcd, voxel_size, verbose=False):
     groove3 = pcd.select_by_index(groove_index[0])
     groove3.paint_uniform_color([0, 0, 1])
 
-    return groove1 #+groove2   #+groove3
+    return groove1 +groove2   +groove3
 
 def thin_line(points, point_cloud_thickness=0.01, iterations=1, sample_points=0):
                     # point_cloud_thickness=0.015
@@ -331,12 +333,12 @@ def detect_groove_workflow(pcd):
     # 1. Down sample the point cloud
     ## a. Define a bounding box for cropping
     bbox = o3d.geometry.AxisAlignedBoundingBox(
-        min_bound = (-0.03, -0.07, 0), # x right, y down, z forward; for the camera
-        max_bound = (0.05, 0.07, 0.5)  # 50mm x 50mm plane with 0.5m depth
+        min_bound = (-0.25, -0.07, 0), # x right, y down, z forward; for the camera
+        max_bound = (0.25, 0.07, 0.5)  # 50mm x 50mm plane with 0.5m depth
     )
 
     ## b. Define voxel size
-    voxel_size = 0.001 # 1mm cube for each voxel
+    voxel_size = 0.0005 # 1mm cube for each voxel
 
 #    print("\n ************* Before cropping ************* ")
 #    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
@@ -348,21 +350,26 @@ def detect_groove_workflow(pcd):
     ### it was remove_none_finite_points in Open3D version 0.8.0... but
     ### it is  remove_non_finite_points  in Open3D version 0.15.1...
     pcd.remove_non_finite_points()
-    input("Point cloud cropped.\nHit enter to continue.")
-    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
-    pub_captured.publish(rviz_cloud)
+    reply = input("Point cloud cropped.\nc to continue other to quit.")
+    if (reply == "c"):
+      rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
+      pub_captured.publish(rviz_cloud)
 
-    ## c. Count the number of points afterwards
-    pc_number = np.asarray(pcd.points).shape[0]
-    rospy.loginfo("Total number of points {}".format(pc_number))
+      ## c. Count the number of points afterwards
+      pc_number = np.asarray(pcd.points).shape[0]
+      rospy.loginfo("Total number of points {}".format(pc_number))
 
-    # 2. Estimate normal toward camera location and normalize it.
-    pcd.estimate_normals(
-        search_param = o3d.geometry.KDTreeSearchParamHybrid(
-            radius = 0.015,
-            max_nn = 100
-        )
-    )
+      # 2. Estimate normal toward camera location and normalize it.
+      pcd.estimate_normals(
+          search_param = o3d.geometry.KDTreeSearchParamHybrid(
+              radius = 0.015,
+              max_nn = 100
+          )
+      )
+    else:
+      rospy.signal_shutdown("Finished shutting down")
+      return
+
     pcd.normalize_normals()
     pcd.orient_normals_towards_camera_location(camera_location = [0.0, 0.0, 0.0])
 
@@ -386,25 +393,39 @@ def detect_groove_workflow(pcd):
         ## with the top 5 percent feature value
     )
 
-    input("Featured points selected.\nHit enter to show selected.")
-    # pcd_selected.paint_uniform_color([0, 1, 0])
-    rviz_cloud = orh.o3dpc_to_rospc(pcd_selected, frame_id="d435_depth_optical_frame")
-    pub_selected.publish(rviz_cloud)
+    reply = input("Featured points selected.\nc to continue others to quit.")
+    if (reply == "c"):
+      # pcd_selected.paint_uniform_color([0, 1, 0])
+      rviz_cloud = orh.o3dpc_to_rospc(pcd_selected, frame_id="d435_depth_optical_frame")
+      pub_selected.publish(rviz_cloud)
 
-    groove = cluster_groove_from_point_cloud(pcd_selected, voxel_size)
+      groove = cluster_groove_from_point_cloud(pcd_selected, voxel_size)
+    else:
+      rospy.signal_shutdown("Finished shutting down")
+      return
 
-    print("\n ************* Groove ************* ")
+      # print("\n ************* Groove ************* ")
     # groove = groove.paint_uniform_color([0, 1, 0])
-    rviz_cloud = orh.o3dpc_to_rospc(groove, frame_id="d435_depth_optical_frame")
-    pub_clustered.publish(rviz_cloud)
+    reply = input("Going to cluster selected points.\nc to continue others to quit.")
+    if (reply == "c"):
+      rviz_cloud = orh.o3dpc_to_rospc(groove, frame_id="d435_depth_optical_frame")
+      pub_clustered.publish(rviz_cloud)
 
-    # 5. Generate a path from the clustered Groove
+      # 5. Generate a path from the clustered Groove
 
-    generated_path = generate_path(groove)
-    generated_path = generated_path.paint_uniform_color([0, 0, 1])
+      reply = input("Press 'c' to show path, any other to quit.")
+      if (reply == "c"):
+        generated_path = generate_path(groove)
+        generated_path = generated_path.paint_uniform_color([0, 0, 1])
 
-    rviz_cloud = orh.o3dpc_to_rospc(generated_path, frame_id="d435_depth_optical_frame")
-    pub_path.publish(rviz_cloud)
+        rviz_cloud = orh.o3dpc_to_rospc(generated_path, frame_id="d435_depth_optical_frame")
+        pub_path.publish(rviz_cloud)
+      else:
+        rospy.signal_shutdown("Finished shutting down")
+        return
+    else:
+      rospy.signal_shutdown("Finished shutting down")
+      return
 
 
 # Main function.

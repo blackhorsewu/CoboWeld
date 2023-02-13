@@ -620,7 +620,7 @@ def detect_groove_workflow(pcd, transfromation_end_to_base, detect_feature="asym
     rospy.loginfo("Total number of pc {}".format(pc_number))
 
 
-    # 3.estimate normal toward cam location and normalise it
+    # 3.estimate normal toward cam location and normalize it
     pcd.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(
          radius=0.01, max_nn=30))
     pcd.normalize_normals()
