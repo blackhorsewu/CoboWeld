@@ -93,8 +93,8 @@ def find_feature_value(pcd, voxel_size):
     # when it is pcd.normals, it is using the normals to find the feature,
     # when it is pcd.colors, it is using the colours to find the feature.
     # n_list is an array of normals of all the points
-    # n_list = np.asarray(pcd.normals)
-    n_list = np.asarray(pcd.colors)
+    n_list = np.asarray(pcd.normals)
+    # n_list = np.asarray(pcd.colors)
 
     # a // b = integer quotient of a divided by b
     # so neighbor (number of neighbors) whichever is smaller of 30 or the quotient 
@@ -333,8 +333,8 @@ def detect_groove_workflow(pcd):
     # 1. Down sample the point cloud
     ## a. Define a bounding box for cropping
     bbox = o3d.geometry.AxisAlignedBoundingBox(
-        min_bound = (-0.25, -0.07, 0), # x right, y down, z forward; for the camera
-        max_bound = (0.25, 0.07, 0.5)  # 50mm x 50mm plane with 0.5m depth
+        min_bound = (-0.0125, -0.0125, 0), # x right, y down, z forward; for the camera
+        max_bound = (0.0125, 0.0125, 0.5)  # 50mm x 50mm plane with 0.5m depth
     )
 
     ## b. Define voxel size
@@ -350,10 +350,16 @@ def detect_groove_workflow(pcd):
     ### it was remove_none_finite_points in Open3D version 0.8.0... but
     ### it is  remove_non_finite_points  in Open3D version 0.15.1...
     pcd.remove_non_finite_points()
-    reply = input("Point cloud cropped.\nc to continue other to quit.")
+    reply = input("Point cloud cropped.\nc to continue,\ns to save, other to quit.")
     if (reply == "c"):
       rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
       pub_captured.publish(rviz_cloud)
+    else:
+      if (reply == "s"):
+        o3d.io.write_point_cloud("patch.pcd", pcd)
+      else:
+        rospy.signal_shutdown("Finished shutting down")
+        return
 
       ## c. Count the number of points afterwards
       pc_number = np.asarray(pcd.points).shape[0]
@@ -366,9 +372,6 @@ def detect_groove_workflow(pcd):
               max_nn = 100
           )
       )
-    else:
-      rospy.signal_shutdown("Finished shutting down")
-      return
 
     pcd.normalize_normals()
     pcd.orient_normals_towards_camera_location(camera_location = [0.0, 0.0, 0.0])
