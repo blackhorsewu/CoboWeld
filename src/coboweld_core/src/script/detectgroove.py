@@ -113,6 +113,7 @@ def find_feature_value(pcd, voxel_size):
         # n_list, computed above, is an array of normals of every point
         # vector is then a vector with its components the arithmetic mean of every
         # element of all the k neighbours of that point
+        # This can be called the CENTROID of the NORMALs of its neighbours
         vector = np.mean(n_list[idx, :], axis=0)
         
         # the bigger the feature value, meaning the normal of that point is more 
@@ -144,7 +145,7 @@ def cluster_groove_from_point_cloud(pcd, voxel_size, verbose=False):
     ## members at the end. That is the largest cluster.
     label_number1 = label[np.argsort(label_counts)[-1]]
     label_number2 = label[np.argsort(label_counts)[-2]]
-    label_number3 = label[np.argsort(label_counts)[-3]]
+    #label_number3 = label[np.argsort(label_counts)[-3]]
 
     if label_number1 == -1:
         if label.shape[0]>1:
@@ -161,11 +162,11 @@ def cluster_groove_from_point_cloud(pcd, voxel_size, verbose=False):
     groove_index = np.where(labels == label_number2)
     groove2 = pcd.select_by_index(groove_index[0])
     groove2.paint_uniform_color([0, 1, 0])
-    groove_index = np.where(labels == label_number3)
-    groove3 = pcd.select_by_index(groove_index[0])
-    groove3.paint_uniform_color([0, 0, 1])
+#    groove_index = np.where(labels == label_number3)
+#    groove3 = pcd.select_by_index(groove_index[0])
+#    groove3.paint_uniform_color([0, 0, 1])
 
-    return groove1 +groove2   +groove3
+    return groove1 +groove2   #+groove3
 
 def thin_line(points, point_cloud_thickness=0.01, iterations=1, sample_points=0):
                     # point_cloud_thickness=0.015
@@ -361,17 +362,17 @@ def detect_groove_workflow(pcd):
         rospy.signal_shutdown("Finished shutting down")
         return
 
-      ## c. Count the number of points afterwards
-      pc_number = np.asarray(pcd.points).shape[0]
-      rospy.loginfo("Total number of points {}".format(pc_number))
+    ## c. Count the number of points afterwards
+    pc_number = np.asarray(pcd.points).shape[0]
+    rospy.loginfo("Total number of points {}".format(pc_number))
 
-      # 2. Estimate normal toward camera location and normalize it.
-      pcd.estimate_normals(
-          search_param = o3d.geometry.KDTreeSearchParamHybrid(
-              radius = 0.015,
-              max_nn = 100
-          )
-      )
+    # 2. Estimate normal toward camera location and normalize it.
+    pcd.estimate_normals(
+        search_param = o3d.geometry.KDTreeSearchParamHybrid(
+            radius = 0.015,
+            max_nn = 30
+        )
+    )
 
     pcd.normalize_normals()
     pcd.orient_normals_towards_camera_location(camera_location = [0.0, 0.0, 0.0])
