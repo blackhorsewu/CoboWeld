@@ -93,14 +93,14 @@ def find_feature_value(pcd, voxel_size):
     # when it is pcd.normals, it is using the normals to find the feature,
     # when it is pcd.colors, it is using the colours to find the feature.
     # n_list is an array of normals of all the points
-    n_list = np.asarray(pcd.normals)
-    # n_list = np.asarray(pcd.colors)
+    # n_list = np.asarray(pcd.normals)
+    n_list = np.asarray(pcd.colors)
 
     # a // b = integer quotient of a divided by b
     # so neighbor (number of neighbors) whichever is smaller of 30 or the quotient 
     # of dividing the number of points by 100
-    # neighbour = min(pc_number//100, 30)
-    neighbour = min(pc_number//50, 100)
+    neighbour = min(pc_number//80, 65)
+    # neighbour = min(pc_number//50, 100)
     
     # for every point of the point cloud
     for index in range(pc_number):
@@ -144,8 +144,8 @@ def cluster_groove_from_point_cloud(pcd, voxel_size, verbose=False):
     ## So, after sorting ascending the labels with the cluster with largest number of
     ## members at the end. That is the largest cluster.
     label_number1 = label[np.argsort(label_counts)[-1]]
-    label_number2 = label[np.argsort(label_counts)[-2]]
-    #label_number3 = label[np.argsort(label_counts)[-3]]
+#    label_number2 = label[np.argsort(label_counts)[-2]]
+#    label_number3 = label[np.argsort(label_counts)[-3]]
 
     if label_number1 == -1:
         if label.shape[0]>1:
@@ -159,14 +159,14 @@ def cluster_groove_from_point_cloud(pcd, voxel_size, verbose=False):
 #    groove = pcd.select_down_sample(groove_index[0])
     groove1 = pcd.select_by_index(groove_index[0])
     groove1.paint_uniform_color([1, 0, 0])
-    groove_index = np.where(labels == label_number2)
-    groove2 = pcd.select_by_index(groove_index[0])
-    groove2.paint_uniform_color([0, 1, 0])
+#    groove_index = np.where(labels == label_number2)
+#    groove2 = pcd.select_by_index(groove_index[0])
+#    groove2.paint_uniform_color([0, 1, 0])
 #    groove_index = np.where(labels == label_number3)
 #    groove3 = pcd.select_by_index(groove_index[0])
 #    groove3.paint_uniform_color([0, 0, 1])
 
-    return groove1 +groove2   #+groove3
+    return groove1 #+groove2   #+groove3
 
 def thin_line(points, point_cloud_thickness=0.01, iterations=1, sample_points=0):
                     # point_cloud_thickness=0.015
@@ -369,7 +369,7 @@ def detect_groove_workflow(pcd):
     # 2. Estimate normal toward camera location and normalize it.
     pcd.estimate_normals(
         search_param = o3d.geometry.KDTreeSearchParamHybrid(
-            radius = 0.015,
+            radius = 0.025,
             max_nn = 30
         )
     )
@@ -444,7 +444,7 @@ if __name__ == "__main__":
   global received_ros_cloud, delete_percentage
 
   # delete_percentage = 0.95 ORIGINAL VALUE
-  delete_percentage = 0.96
+  delete_percentage = 0.98
 
   received_ros_cloud = None
 
