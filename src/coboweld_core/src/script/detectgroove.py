@@ -93,14 +93,15 @@ def find_feature_value(pcd, voxel_size):
     # when it is pcd.normals, it is using the normals to find the feature,
     # when it is pcd.colors, it is using the colours to find the feature.
     # n_list is an array of normals of all the points
-    # n_list = np.asarray(pcd.normals)
-    n_list = np.asarray(pcd.colors)
+    n_list = np.asarray(pcd.normals)
+    # n_list = np.asarray(pcd.colors)
 
     # a // b = integer quotient of a divided by b
     # so neighbor (number of neighbors) whichever is smaller of 30 or the quotient 
     # of dividing the number of points by 100
-    neighbour = min(pc_number//80, 65)
+    # neighbour = min(pc_number//80, 65)
     # neighbour = min(pc_number//50, 100)
+    neighbour = 450
     
     # for every point of the point cloud
     for index in range(pc_number):
@@ -334,8 +335,8 @@ def detect_groove_workflow(pcd):
     # 1. Down sample the point cloud
     ## a. Define a bounding box for cropping
     bbox = o3d.geometry.AxisAlignedBoundingBox(
-        min_bound = (-0.0125, -0.0125, 0), # x right, y down, z forward; for the camera
-        max_bound = (0.0125, 0.0125, 0.5)  # 50mm x 50mm plane with 0.5m depth
+        min_bound = (-0.025, -0.025, 0.2), # x right, y down, z forward; for the camera
+        max_bound = (0.025, 0.025, 0.5)  # 50mm x 50mm plane with 0.5m depth
     )
 
     ## b. Define voxel size
@@ -369,8 +370,8 @@ def detect_groove_workflow(pcd):
     # 2. Estimate normal toward camera location and normalize it.
     pcd.estimate_normals(
         search_param = o3d.geometry.KDTreeSearchParamHybrid(
-            radius = 0.025,
-            max_nn = 30
+            radius = 0.0125,
+            max_nn = 500
         )
     )
 
