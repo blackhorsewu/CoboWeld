@@ -76,6 +76,7 @@ def normalize_feature(feature_value_list):
 
     return np.array(normalized_feature_value_list)
 
+'''
 # find feature value of each point of the point cloud and put them into a list
 def find_feature_value(pcd, voxel_size):
 
@@ -125,6 +126,74 @@ def find_feature_value(pcd, voxel_size):
         feature_value_list.append(feature_value)
 
     return np.array(feature_value_list)
+'''
+
+def find_feature_value(pcd):
+  # Build a KD (k-dimensional) Tree using Flann
+  # that is Fast Library for Approximate Nearest Neighbour
+  pcd_tree = o3d.geometry.KDTreeFlann(pcd)
+
+  pointcloud = np.asarray(pcd.points)
+  pointcolour = np.asarray(pcd.colors)
+
+  # Convert the pcd.points to a numpy array
+  # The first dimension of this array, shape[0] is the number of points in this cloud
+  pc_number = np.asarray(pcd.points).shape[0]
+
+  # Declare the feature value list
+  feature_value_list = []
+
+  # define neighbour
+  neighbour = min(pc_number//100, 30)
+
+  # show the neighbours one by one
+  for index in range(pc_number):
+    [k, idx, _] = pcd_tree.search_knn_vector_3d(pointcloud[index], neighbour)
+    pointcolour[index] = [1.0, 0.0, 0.0]    # set the query point to Red
+    for coldex in idx:
+      pointcolour[coldex] = [0.0, 1.0, 0.0] # set the neighbourhood to Green
+    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
+    pub_neighbours.publish(rviz_cloud)
+
+    # Find the Geometric Centroid of the neighbourhood
+    centroid = np.mean(pointcloud[idx, :], axis = 0)
+
+
+    pointcolour[coldex] = [0.0, 0.0, 0.0] # reset the neighbourhood to black after displayed
+    if input("\nHit ENTER for next neighbourhood: ") == "q" : break
+
+
+  # for every point of the point cloud
+  for index in range(pc_number):
+
+    # Search the k nearest neighbours for each point
+    # [k, idx, _] = pcd_tree.search_knn_vector_3d(pointcloud[index], neighbour)
+
+    # Find the resolution
+    resolution = (pointcloud[index, :] - pointcloud[idx, :]).min()
+
+    # Find the Geometric Centroid of the neighbourhood
+    centroid = np.mean(pointcloud[idx, :], axis = 0)
+
+    # Find the Mean Shift as the feature value
+    feature_value = np.linalg.norm(centroid - pointcloud[idx])/resolution
+
+#    if ((feature_value < 0.3) or (feature_value > 0.45)): feature_value = 0.0
+
+    # Put the feature value into the feature value list
+    feature_value_list.append(feature_value)
+
+  feature_value_list = np.array(feature_value_list)
+  min_value = feature_value_list.min()
+  max_value = feature_value_list.max()
+  denom = max_value - min_value
+  feature_value_list[:] = (feature_value_list[:] - min_value)/denom
+
+  for index in range(pc_number):
+    if (feature_value_list[index] < 0.3) or (feature_value_list[index] > 0.45): 
+      feature_value_list[index] = 0
+
+  return feature_value_list
 
 def cluster_groove_from_point_cloud(pcd, voxel_size, verbose=False):
 
@@ -380,8 +449,8 @@ def detect_groove_workflow(pcd):
 
     # 3. Use different geometry features to find groove
     #    Use asymmetric normals as a feature to find groove
-    feature_value_list = find_feature_value(pcd, voxelsize)
-    normalized_feature_value_list = normalize_feature(feature_value_list)
+    feature_value_list = find_feature_value(pcd)
+    # normalized_feature_value_list = normalize_feature(feature_value_list)
 
     # 4. Delete low value points and cluster
     delete_points = int(pc_number * delete_percentage)
@@ -393,7 +462,7 @@ def detect_groove_workflow(pcd):
         ## that index data along the sorting axis
         ## in ascending order by default. So the smaller value first
         ## and the largest value at the end
-        np.argsort(normalized_feature_value_list)[delete_points:]
+        np.argsort(feature_value_list)[delete_points:]
         ## therefore this is a list of indices of the point cloud
         ## with the top 5 percent feature value
     )
@@ -458,7 +527,7 @@ if __name__ == "__main__":
   pub_captured = rospy.Publisher("captured", PointCloud2, queue_size=1)
   pub_selected = rospy.Publisher("selected", PointCloud2, queue_size=1)
   pub_clustered = rospy.Publisher("clustered", PointCloud2, queue_size=1)
-  pub_pc = rospy.Publisher("downsampled_points", PointCloud2, queue_size=1)
+  pub_neighbours = rospy.Publisher("neighbours", PointCloud2, queue_size=1)
   pub_path = rospy.Publisher("path", PointCloud2, queue_size=1)
 
   print("\n ************* Start *************")

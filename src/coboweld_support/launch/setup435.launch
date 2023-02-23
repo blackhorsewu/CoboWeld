@@ -64,7 +64,7 @@
   <include file="$(find realsense2_camera)/launch/rs_camera.launch" >
     <arg name="camera" value="d435" />
     <arg name="enable_pointcloud" value="true"/>
-    <arg name="ordered_pc" value="true"/>
+    <arg name="ordered_pc" value="false"/>
     <arg name="initial_reset" value="true"/>
   </include>
 
