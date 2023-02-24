@@ -60,6 +60,7 @@ import scipy.spatial as spatial
 
 import urx
 
+import csv
 
 
 # This is for conversion from Open3d point cloud to ROS point cloud
@@ -144,25 +145,52 @@ def find_feature_value(pcd):
   feature_value_list = []
 
   # define neighbour
-  neighbour = min(pc_number//100, 30)
+  #neighbour = min(pc_number//100, 30)
+
+  neighbour = int(input('Please enter the number of neighbours you want: '))
 
   # show the neighbours one by one
-  for index in range(pc_number):
-    [k, idx, _] = pcd_tree.search_knn_vector_3d(pointcloud[index], neighbour)
-    pointcolour[index] = [1.0, 0.0, 0.0]    # set the query point to Red
-    for coldex in idx:
-      pointcolour[coldex] = [0.0, 1.0, 0.0] # set the neighbourhood to Green
-    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
-    pub_neighbours.publish(rviz_cloud)
+  reply = input('Do you want to show neighbourhoods one by one? (Y/n): ')
+  if (reply == 'Y') or (reply == 'y'):
+    for index in range(pc_number):
+      [k, idx, _] = pcd_tree.search_knn_vector_3d(pointcloud[index], neighbour)
+      for coldex in idx:
+        pointcolour[coldex] = [0.0, 1.0, 0.0] # set the neighbourhood to Green
+      pointcolour[index] = [1.0, 0.0, 0.0]    # set the query point to Red
+      rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
+      pub_neighbours.publish(rviz_cloud)
 
-    # Find the Geometric Centroid of the neighbourhood
-    centroid = np.mean(pointcloud[idx, :], axis = 0)
+      # Find the Geometric Centroid of the neighbourhood
+      centroid = np.mean(pointcloud[idx, :], axis = 0)
+
+      pointcolour[coldex] = [0.0, 0.0, 0.0] # reset the neighbourhood to black after displayed
+      print("Point number: ", index)
+      if input("Hit ENTER for next neighbourhood: ") == "q" : break
+  else:
+    reply = input('Input the point number for the neighbourhood: ')
+    while (reply.isdigit()):
+      index = int(reply)
+      print('Coordinates of this point: ', pointcloud[index, 0], pointcloud[index, 1], pointcloud[index, 2])
+      [k, idx, _] = pcd_tree.search_knn_vector_3d(pointcloud[index], neighbour)
+      for coldex in idx:
+        pointcolour[coldex] = [0.0, 1.0, 0.0] # set the neighbourhood to Green
+      filename = input('Input the file name for coordinates of the neighbourhood: ')
+      with open(filename, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["X", "Y", "Z"])
+        for posdex in idx:
+          writer.writerow([pointcloud[posdex, 0], pointcloud[posdex, 1], pointcloud[posdex, 2]])
+
+      pointcolour[index] = [1.0, 0.0, 0.0]    # set the query point to Red
+      rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
+      pub_neighbours.publish(rviz_cloud)
+      reply = input('Input the point number for the next neighbourhood: ')
+
+    rospy.signal_shutdown("Finished shutting down")
+    return
 
 
-    pointcolour[coldex] = [0.0, 0.0, 0.0] # reset the neighbourhood to black after displayed
-    if input("\nHit ENTER for next neighbourhood: ") == "q" : break
-
-
+'''
   # for every point of the point cloud
   for index in range(pc_number):
 
@@ -176,24 +204,25 @@ def find_feature_value(pcd):
     centroid = np.mean(pointcloud[idx, :], axis = 0)
 
     # Find the Mean Shift as the feature value
-    feature_value = np.linalg.norm(centroid - pointcloud[idx])/resolution
+    #feature_value = np.linalg.norm(centroid - pointcloud[idx])/resolution
 
 #    if ((feature_value < 0.3) or (feature_value > 0.45)): feature_value = 0.0
 
     # Put the feature value into the feature value list
-    feature_value_list.append(feature_value)
+    #feature_value_list.append(feature_value)
 
   feature_value_list = np.array(feature_value_list)
   min_value = feature_value_list.min()
   max_value = feature_value_list.max()
   denom = max_value - min_value
-  feature_value_list[:] = (feature_value_list[:] - min_value)/denom
+  # feature_value_list[:] = (feature_value_list[:] - min_value)/denom
 
   for index in range(pc_number):
     if (feature_value_list[index] < 0.3) or (feature_value_list[index] > 0.45): 
       feature_value_list[index] = 0
 
   return feature_value_list
+'''
 
 def cluster_groove_from_point_cloud(pcd, voxel_size, verbose=False):
 
@@ -423,15 +452,22 @@ def detect_groove_workflow(pcd):
     ### it is  remove_non_finite_points  in Open3D version 0.15.1...
     pcd.remove_non_finite_points()
     reply = input("Point cloud cropped.\nc to continue,\ns to save, other to quit.")
-    if (reply == "c"):
+    print("Do you want to use saved point cloud?")
+    reply = input("N for no, Y for yes: ")
+    if (reply == "N") or (reply == "n"):
       rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
       pub_captured.publish(rviz_cloud)
+      print("Do you want to save the new point cloud?")
+      reply = input("Y for yes: ")
+      if (reply == "Y") or (reply == "y"):
+         filename = input("Please input filename: ")
+         o3d.io.write_point_cloud(filename, pcd)
+    elif (reply == "Y") or (reply == 'y'):
+      filename = input("Please enter file name to load old saved point cloud: ")
+      pcd = o3d.io.read_point_cloud(filename)
     else:
-      if (reply == "s"):
-        o3d.io.write_point_cloud("patch.pcd", pcd)
-      else:
-        rospy.signal_shutdown("Finished shutting down")
-        return
+      rospy.signal_shutdown("Finished shutting down")
+      return
 
     ## c. Count the number of points afterwards
     pc_number = np.asarray(pcd.points).shape[0]
@@ -453,20 +489,21 @@ def detect_groove_workflow(pcd):
     # normalized_feature_value_list = normalize_feature(feature_value_list)
 
     # 4. Delete low value points and cluster
-    delete_points = int(pc_number * delete_percentage)
+#    delete_points = int(pc_number * delete_percentage)
 
 #    pcd_selected = pcd.select_down_sample(
-    pcd_selected = pcd.select_by_index(
+#    pcd_selected = pcd.select_by_index(
         ## np.argsort performs an indirect sort
         ## and returns an array of indices of the same shape
         ## that index data along the sorting axis
         ## in ascending order by default. So the smaller value first
         ## and the largest value at the end
-        np.argsort(feature_value_list)[delete_points:]
+#        np.argsort(feature_value_list)[delete_points:]
         ## therefore this is a list of indices of the point cloud
         ## with the top 5 percent feature value
-    )
+#    )
 
+'''
     reply = input("Featured points selected.\nc to continue others to quit.")
     if (reply == "c"):
       # pcd_selected.paint_uniform_color([0, 1, 0])
@@ -500,7 +537,7 @@ def detect_groove_workflow(pcd):
     else:
       rospy.signal_shutdown("Finished shutting down")
       return
-
+'''
 
 # Main function.
 if __name__ == "__main__":
