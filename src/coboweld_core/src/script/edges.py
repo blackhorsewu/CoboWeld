@@ -21,13 +21,13 @@ for index in range(count):
   local_normal = eq[0:3] # Coefficients of the plane equation
   inliers = liers.shape[0]
   # If the fitted plane has less than 3 points, it is not a plane
-  if (pc.points[index] not in inliers) or (inliers < 3):
+  if (pc.points[index] not in np.asarray(pc.points)[liers[0:]]) or (inliers < 3):
     continue
   # Construct coordinate frame u, v
   # Let the first inlier be the origin, the 2nd inlier - the origin gives the first vector (u)
   # The normal cross the first vector becomes the second vector (v)
   # Find all the Angular Gap theta.
-  u = pc.points[index] - pc.points[liers[0]]
+  u = pc.points[index] - np.asarray(pc.points)[liers[0]]
   v = np.cross(local_normal, u)
   theta = []
   for ilr in range(inliers):
