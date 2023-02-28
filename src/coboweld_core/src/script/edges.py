@@ -19,6 +19,7 @@ for index in range(count):
   eq, liers = plane1.fit(np.asarray(pc.points)[idx[0:]], 0.002) # within 2mm
   # Use the plane equation to form the RANSAC-normal
   local_normal = eq[0:3] # Coefficients of the plane equation
+  #print("local_normal: ", local_normal)
   inliers = liers.shape[0]
   # If the fitted plane has less than 3 points, it is not a plane
   if (pc.points[index] not in np.asarray(pc.points)[liers[0:]]) or (inliers < 3):
@@ -27,17 +28,22 @@ for index in range(count):
   # Let the first inlier be the origin, the 2nd inlier - the origin gives the first vector (u)
   # The normal cross the first vector becomes the second vector (v)
   # Find all the Angular Gap theta.
-  u = pc.points[index] - np.asarray(pc.points)[liers[0]]
+  u = pc.points[index] - np.asarray(pc.points)[liers[1]]
   v = np.cross(local_normal, u)
+  #print("u: ", u)
+  #print("v: ", v)
+  #print("query point: ", pc.points[index])
   theta = []
   for ilr in range(inliers):
     if (liers[ilr] != index) :
+      #print("pi: ", pc.points[liers[ilr]])
       opi = pc.points[liers[ilr]] - pc.points[index]
-      diu = np.dot(opi, u)
-      div = np.dot(opi, v)
-      theta.append(math.atan(diu/div))
+      #print("opi: ", opi)
+      dui = np.dot(opi, u)
+      dvi = np.dot(opi, v)
+      theta.append(math.atan(dui/dvi))
   g_theta = []
-  for ilr in range(inliers-1):
+  for ilr in range(inliers-2): # minus 2 because the query point is not used
     g_theta.append(theta[ilr+1] - theta[ilr])
   g_theta = np.asarray(g_theta)
   g_theta = max(g_theta[:])
