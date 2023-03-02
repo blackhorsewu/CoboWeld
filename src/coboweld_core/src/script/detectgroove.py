@@ -352,8 +352,8 @@ def detect_groove_workflow(pcd):
     pcd = pcd.voxel_down_sample(voxel_size = voxelsize)
     pcd = pcd.crop(bbox)
 
-    ### it was remove_none_finite_points in Open3D version 0.8.0... but
-    ### it is  remove_non_finite_points  in Open3D version 0.15.1...
+    ### it was 'remove_none_finite_points' in Open3D version 0.8.0... but
+    ### it is  'remove_non_finite_points'  in Open3D version 0.15.1...
     pcd.remove_non_finite_points()
     print("Point cloud cropped.")
     print("Do you want to use saved point cloud?")
