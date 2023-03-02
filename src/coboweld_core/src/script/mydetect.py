@@ -77,52 +77,152 @@ def normalize_feature(feature_value_list):
 
     return np.array(normalized_feature_value_list)
 
-
+'''
 # find feature value of each point of the point cloud and put them into a list
-def find_feature_value(pcd):
+def find_feature_value(pcd, voxel_size):
 
-  # Build a KD (k-dimensional) Tree for Flann
-  # Fast Library for Approximate Nearest Neighbor
+    # Build a KD (k-dimensional) Tree for Flann
+    # Fast Library for Approximate Nearest Neighbor
+    pcd_tree = o3d.geometry.KDTreeFlann(pcd)
+
+    # Treat pcd.points as an numpy array of n points by m attributes of a point
+    # The first dimension, shape[0], of this array is the number of points in this point cloud.
+    pc_number = np.asarray(pcd.points).shape[0]
+
+    feature_value_list = []
+    
+    # This is very important. It specifies the attribute that we are using to find the feature
+    # when it is pcd.normals, it is using the normals to find the feature,
+    # when it is pcd.colors, it is using the colours to find the feature.
+    # n_list is an array of normals of all the points
+    n_list = np.asarray(pcd.normals)
+    # n_list = np.asarray(pcd.colors)
+
+    # a // b = integer quotient of a divided by b
+    # so neighbor (number of neighbors) whichever is smaller of 30 or the quotient 
+    # of dividing the number of points by 100
+    # neighbour = min(pc_number//80, 65)
+    # neighbour = min(pc_number//50, 100)
+    neighbour = min(pc_number//100, 30)
+    # neighbour = 30
+    
+    # for every point of the point cloud
+    for index in range(pc_number):
+        
+        # Search the k nearest neighbour for each point of the point cloud
+        # The pcd.points[index] is the point to find the nearest neighbour for
+        # neighbour, found above, is the neighbours to be searched
+        [k, idx, _] = pcd_tree.search_knn_vector_3d(pcd.points[index], neighbour)
+
+        # n_list, computed above, is an array of normals of every point
+        # vector is then a vector with its components the arithmetic mean of every
+        # element of all the k neighbours of that point
+        # This can be called the CENTROID of the NORMALs of its neighbours
+        vector = np.mean(n_list[idx, :], axis=0)
+        
+        # the bigger the feature value, meaning the normal of that point is more 
+        # different from its neighbours
+        feature_value = np.linalg.norm(
+            vector - n_list[index, :] * np.dot(vector,n_list[index, :]) / np.linalg.norm(n_list[index, :]))
+        feature_value_list.append(feature_value)
+
+    return np.array(feature_value_list)
+'''
+
+def find_feature_value(pcd):
+  # Build a KD (k-dimensional) Tree using Flann
+  # that is Fast Library for Approximate Nearest Neighbour
   pcd_tree = o3d.geometry.KDTreeFlann(pcd)
 
-  # Treat pcd.points as an numpy array of n points by m attributes of a point
-  # The first dimension, shape[0], of this array is the number of points in this point cloud.
+  pointcloud = np.asarray(pcd.points)
+  pointcolour = np.asarray(pcd.colors)
+
+  # Convert the pcd.points to a numpy array
+  # The first dimension of this array, shape[0] is the number of points in this cloud
   pc_number = np.asarray(pcd.points).shape[0]
 
+  # Declare the feature value list
   feature_value_list = []
-  
-  # This is very important. It specifies the attribute that we are using to find the feature
-  # when it is pcd.normals, it is using the normals to find the feature,
-  # n_list is an array of normals of all the points
-  n_list = np.asarray(pcd.normals)
 
-  # a // b = integer quotient of a divided by b
-  # so neighbor (number of neighbors) whichever is smaller of 30 or the quotient 
-  # of dividing the number of points by 100
-  neighbour = min(pc_number//100, 30)
-  # neighbour = 30
-  
+  # define neighbour
+  #neighbour = min(pc_number//100, 30)
+
+  neighbour = int(input('Please enter the number of neighbours you want: '))
+
+  # show the neighbours one by one
+  reply = input('Do you want to show neighbourhoods one by one? (Y/n): ')
+  if (reply == 'Y') or (reply == 'y'):
+    for index in range(pc_number):
+      [k, idx, _] = pcd_tree.search_knn_vector_3d(pointcloud[index], neighbour)
+      for coldex in idx:
+        pointcolour[coldex] = [0.0, 1.0, 0.0] # set the neighbourhood to Green
+      pointcolour[index] = [1.0, 0.0, 0.0]    # set the query point to Red
+      rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
+      pub_neighbours.publish(rviz_cloud)
+
+      # Find the Geometric Centroid of the neighbourhood
+      centroid = np.mean(pointcloud[idx, :], axis = 0)
+
+      pointcolour[coldex] = [0.0, 0.0, 0.0] # reset the neighbourhood to black after displayed
+      print("Point number: ", index)
+      if input("Hit ENTER for next neighbourhood: ") == "q" : break
+  else:
+    reply = input('Input the point number for the neighbourhood: ')
+    while (reply.isdigit()):
+      index = int(reply)
+      print('Coordinates of this point: ', pointcloud[index, 0], pointcloud[index, 1], pointcloud[index, 2])
+      [k, idx, _] = pcd_tree.search_knn_vector_3d(pointcloud[index], neighbour)
+      for coldex in idx:
+        pointcolour[coldex] = [0.0, 1.0, 0.0] # set the neighbourhood to Green
+      filename = input('Input the file name for coordinates of the neighbourhood: ')
+      with open(filename, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["X", "Y", "Z"])
+        for posdex in idx:
+          writer.writerow([pointcloud[posdex, 0], pointcloud[posdex, 1], pointcloud[posdex, 2]])
+
+      pointcolour[index] = [1.0, 0.0, 0.0]    # set the query point to Red
+      rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
+      pub_neighbours.publish(rviz_cloud)
+      reply = input('Input the point number for the next neighbourhood: ')
+
+    rospy.signal_shutdown("Finished shutting down")
+    return
+
+
+'''
   # for every point of the point cloud
   for index in range(pc_number):
-      
-      # Search the k nearest neighbour for each point of the point cloud.
-      # The pcd.points[index] is the (query) point to find the nearest neighbour for.
-      # 'neighbour', found above, is the number of neighbours to be searched.
-      [k, idx, _] = pcd_tree.search_knn_vector_3d(pcd.points[index], neighbour)
 
-      # n_list, computed above, is an array of normals of every point.
-      # 'vector' is then a vector with its components the arithmetic mean of every
-      # element of all the k neighbours of that (query) point
-      # This can be called the CENTROID of the NORMALs of its neighbours
-      vector = np.mean(n_list[idx, :], axis=0)
-      
-      # the bigger the feature value, meaning the normal of that point is more 
-      # different from its neighbours
-      feature_value = np.linalg.norm(
-          vector - n_list[index, :] * np.dot(vector,n_list[index, :]) / np.linalg.norm(n_list[index, :]))
-      feature_value_list.append(feature_value)
+    # Search the k nearest neighbours for each point
+    # [k, idx, _] = pcd_tree.search_knn_vector_3d(pointcloud[index], neighbour)
 
-  return np.array(feature_value_list)
+    # Find the resolution
+    resolution = (pointcloud[index, :] - pointcloud[idx, :]).min()
+
+    # Find the Geometric Centroid of the neighbourhood
+    centroid = np.mean(pointcloud[idx, :], axis = 0)
+
+    # Find the Mean Shift as the feature value
+    #feature_value = np.linalg.norm(centroid - pointcloud[idx])/resolution
+
+#    if ((feature_value < 0.3) or (feature_value > 0.45)): feature_value = 0.0
+
+    # Put the feature value into the feature value list
+    #feature_value_list.append(feature_value)
+
+  feature_value_list = np.array(feature_value_list)
+  min_value = feature_value_list.min()
+  max_value = feature_value_list.max()
+  denom = max_value - min_value
+  # feature_value_list[:] = (feature_value_list[:] - min_value)/denom
+
+  for index in range(pc_number):
+    if (feature_value_list[index] < 0.3) or (feature_value_list[index] > 0.45): 
+      feature_value_list[index] = 0
+
+  return feature_value_list
+'''
 
 def cluster_groove_from_point_cloud(pcd, voxel_size, verbose=False):
 
@@ -334,12 +434,8 @@ def detect_groove_workflow(pcd):
     # 1. Down sample the point cloud
     ## a. Define a bounding box for cropping
     bbox = o3d.geometry.AxisAlignedBoundingBox(
-        # x right, y down, z forward; for the camera
-        # min_bound = (-0.025, -0.25, 0.2), 
-        # max_bound = (0.05, 0.1, 0.5)  
-        # 50mm x 50mm plane with 0.5m depth
-        min_bound = (-0.015, -0.025, 0.2), 
-        max_bound = (0.035, 0.025, 0.5)  
+        min_bound = (-0.025, -0.25, 0.2), # x right, y down, z forward; for the camera
+        max_bound = (0.05, 0.1, 0.5)  # 50mm x 50mm plane with 0.5m depth
     )
 
     ## b. Define voxel size
@@ -355,7 +451,7 @@ def detect_groove_workflow(pcd):
     ### it was remove_none_finite_points in Open3D version 0.8.0... but
     ### it is  remove_non_finite_points  in Open3D version 0.15.1...
     pcd.remove_non_finite_points()
-    print("Point cloud cropped.")
+    reply = input("Point cloud cropped.\nc to continue,\ns to save, other to quit.")
     print("Do you want to use saved point cloud?")
     reply = input("N for no, Y for yes: ")
     if (reply == "N") or (reply == "n"):
@@ -380,8 +476,7 @@ def detect_groove_workflow(pcd):
     # 2. Estimate normal toward camera location and normalize it.
     pcd.estimate_normals(
         search_param = o3d.geometry.KDTreeSearchParamHybrid(
-            # radius = 0.01, max_nn = 30
-            radius = 0.05, max_nn = 30
+            radius = 0.01, max_nn = 30
         )
     )
 
@@ -391,23 +486,24 @@ def detect_groove_workflow(pcd):
     # 3. Use different geometry features to find groove
     #    Use asymmetric normals as a feature to find groove
     feature_value_list = find_feature_value(pcd)
-    normalized_feature_value_list = normalize_feature(feature_value_list)
+    # normalized_feature_value_list = normalize_feature(feature_value_list)
 
     # 4. Delete low value points and cluster
-    delete_points = int(pc_number * delete_percentage)
+#    delete_points = int(pc_number * delete_percentage)
 
 #    pcd_selected = pcd.select_down_sample(
-    pcd_selected = pcd.select_by_index(
+#    pcd_selected = pcd.select_by_index(
         ## np.argsort performs an indirect sort
         ## and returns an array of indices of the same shape
         ## that index data along the sorting axis
         ## in ascending order by default. So the smaller value first
         ## and the largest value at the end
-        np.argsort(feature_value_list)[delete_points:]
+#        np.argsort(feature_value_list)[delete_points:]
         ## therefore this is a list of indices of the point cloud
         ## with the top 5 percent feature value
-    )
+#    )
 
+'''
     reply = input("Featured points selected.\nc to continue others to quit.")
     if (reply == "c"):
       # pcd_selected.paint_uniform_color([0, 1, 0])
@@ -441,6 +537,7 @@ def detect_groove_workflow(pcd):
     else:
       rospy.signal_shutdown("Finished shutting down")
       return
+'''
 
 # Main function.
 if __name__ == "__main__":
