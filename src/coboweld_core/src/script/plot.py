@@ -11,9 +11,6 @@ x = pointcloud[:, 0]
 y = pointcloud[:, 1]
 z = pointcloud[:, 2]
 
-xd = pointcloud[:, 0]
-yd = pointcloud[:, 1]
-
 # Number of points in this "patch"
 count = np.asarray(pc.points).shape[0]
 print("Count: ", count)
@@ -21,11 +18,10 @@ print("Count: ", count)
 # Build the KD Tree using the Fast Library for Approximate Nearest Neighbour
 pc_kdtree = o3d.geometry.KDTreeFlann(pc)
 
-# try to find neighbours along the center line where x = 0.0
-# all the points within 1cm of the center line
-neighbour = 50
+neighbour = 60
 
 density = []
+shift_list = []
 
 for index in range(count):
 
@@ -37,14 +33,26 @@ for index in range(count):
   # Query point
   q_pt = pointcloud[index]
 
+  # the query point is always the first point in idx and should not be used
+  # therefore must start from 1
+  idx = idx[1:]
+
+  # find the Geometric Centroid
+  centroid = np.mean(pointcloud[idx], axis=0)
+
+  # find the point density and the mean shift
   for cnt in idx:
-    #print('pointcloud[cnt]: ', pointcloud[cnt])
+    # number of points less than
     dist = np.linalg.norm(q_pt - pointcloud[cnt])
     #print('distance: ', dist)
-    if dist < 0.0007021: d += 1
+    if dist < 0.00071: d += 1
 
+  shift = np.linalg.norm(centroid - pointcloud[idx])*d
+
+  print('shift: ', shift)
   print('density: ', d)
 
+  shift_list.append(shift)
   density.append(d)
 
 max_cloud = np.max(pointcloud[:, 2])
@@ -64,6 +72,7 @@ ax.set_title('The "patch1" point cloud and its point density')
 # c='r' ; colour is RED, s=10 ; size is 10
 ax.scatter(x, y, z, c='g', s=1)
 ax.scatter(x, y, density, c='r', s=5)
+ax.scatter(x, y, shift_list, c='b', s=10)
 ax.set_xlabel('x', labelpad=20)
 ax.set_ylabel('y', labelpad=20)
 ax.set_zlabel('z', labelpad=20)
