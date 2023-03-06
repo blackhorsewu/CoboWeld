@@ -110,6 +110,7 @@ def find_feature_value(pcd):
       # 'neighbour', found above, is the number of neighbours to be searched.
       [k, idx, _] = pcd_tree.search_knn_vector_3d(pcd.points[index], neighbour)
 
+      idx = idx[1:]
       # n_list, computed above, is an array of normals of every point.
       # 'vector' is then a vector with its components the arithmetic mean of every
       # element of all the k neighbours of that (query) point
@@ -311,7 +312,14 @@ def generate_path(groove):
     y = sorted_points[:, 1]
     z = sorted_points[:, 2]
 
-    (tck, u), fp, ier, msg = interpolate.splprep([x, y, z], s=float("inf"), full_output=1)
+    try:
+       (tck, u), fp, ier, msg = interpolate.splprep([x, y, z], s=float("inf"), full_output=1)
+    except TypeError:
+      print("\n ************* End ************* ")
+      robot.stop()
+      # close the communication, otherwise python will not shutdown properly
+      robot.close()
+      rospy.signal_shutdown("Finished shutting down")
 
     u_fine = np.linspace(0, 1, x.size*2)
 
