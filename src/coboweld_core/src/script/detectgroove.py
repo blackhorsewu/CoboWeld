@@ -110,7 +110,9 @@ def find_feature_value(pcd):
       # 'neighbour', found above, is the number of neighbours to be searched.
       [k, idx, _] = pcd_tree.search_knn_vector_3d(pcd.points[index], neighbour)
 
+      # get rid of the query point in the neighbourhood
       idx = idx[1:]
+
       # n_list, computed above, is an array of normals of every point.
       # 'vector' is then a vector with its components the arithmetic mean of every
       # element of all the k neighbours of that (query) point
