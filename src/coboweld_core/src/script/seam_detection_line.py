@@ -38,6 +38,9 @@ from scipy import interpolate
 import copy
 import math
 
+# This is for conversion from Open3d point cloud to ROS point cloud
+from open3d_ros_helper import open3d_ros_helper as orh
+
 # The data structure of each point in ros PointCloud2: 16 bits = x + y + z + rgb
 FIELDS_XYZ = [
     PointField(name='x', offset=0, datatype=PointField.FLOAT32, count=1),
@@ -380,8 +383,8 @@ def find_feature_value(feature, pcd, voxel_size):
     # This is very important. It specifies the attribute that we are using to find the feature
     # when it is pcd.normals, it is using the normals to find the feature,
     # when it is pcd.colors, it is using the colours to find the feature.
-    # n_list = np.asarray(pcd.normals)
-    n_list = np.asarray(pcd.colors)
+    n_list = np.asarray(pcd.normals)
+    #n_list = np.asarray(pcd.colors)
 
     if feature == "asymmetry":
         neighbor = min(pc_number//100, 30)
@@ -415,7 +418,7 @@ def cluster_groove_from_point_cloud(pcd_selected, voxel_size, verbose=False):
             print("can not find a valid groove cluster")
     
     groove_index = np.where(labels == label_number)
-    groove = pcd_selected.select_down_sample(groove_index[0])
+    groove = pcd_selected.select_by_index(groove_index[0])
 
     return groove
 
@@ -450,7 +453,10 @@ def find_orientation(trajectory):
         # The Y-axis cross the Z-axis gives the X-axis
         x_axis = np.cross(y_axis, z_axis)
         x_axis = x_axis/np.linalg.norm(x_axis, axis=0)
-        r = R.from_dcm(np.vstack((x_axis, y_axis, z_axis)).T)
+        #r = R.from_dcm(np.vstack((x_axis, y_axis, z_axis)).T)
+        # In scipy.spatial.Rotation methods from_dcm, as_dcm were renamed to 
+        # from_matrix, as matrix respectively
+        r = R.from_matrix(np.vstack((x_axis, y_axis, z_axis)).T)
         rotvec = r.as_rotvec()
         # Work out the approach point if this is the first point
         if i == 0 :
@@ -596,24 +602,24 @@ def detect_groove_workflow(pcd, transfromation_end_to_base, detect_feature="asym
 
     original_pcd = pcd
 
-    bbox = o3d.geometry.AxisAlignedBoundingBox(
-      min_bound=(-0.5, -0.5, 0), 
-      max_bound=(0.5, 0.5, 0.35))
+    #bbox = o3d.geometry.AxisAlignedBoundingBox(
+    #  min_bound=(-0.5, -0.5, 0), 
+    #  max_bound=(0.5, 0.5, 0.35))
 
-    voxel_size = 0.001
+    voxel_size = 0.005
     pcd = pcd.voxel_down_sample(voxel_size=voxel_size)
 
-    pcd = pcd.crop(bbox)
+    #pcd = pcd.crop(bbox)
 
-    #pcd_points = np.asarray(pcd.points)
-    #pcd.clear()
-    #pcd_points = pcd_points[pcd_points[:,2]<max_dis]
-    #pcd.points = o3d.utility.Vector3dVector(pcd_points)
+    pcd_points = np.asarray(pcd.points)
+    pcd.clear()
+    pcd_points = pcd_points[pcd_points[:,2]<max_dis]
+    pcd.points = o3d.utility.Vector3dVector(pcd_points)
 
-    rviz_cloud = convertCloudFromOpen3dToRos(pcd)
+    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
     pub_capture.publish(rviz_cloud)
 
-    pcd.remove_none_finite_points()
+    pcd.remove_non_finite_points()
     # pcd.remove_statistical_outlier(nb_neighbors=20, std_ratio=1.0)
     # pcd.remove_radius_outlier(nb_points=20, radius = 4*voxel_size)
     pc_number = np.asarray(pcd.points).shape[0]
@@ -632,11 +638,11 @@ def detect_groove_workflow(pcd, transfromation_end_to_base, detect_feature="asym
     
     # 5.delete low value points and cluster
     delete_points = int(pc_number*delete_percentage)
-    pcd_selected = pcd.select_down_sample(np.argsort(normalized_feature_value_list)[delete_points:])
+    pcd_selected = pcd.select_by_index(np.argsort(normalized_feature_value_list)[delete_points:])
 
     groove = cluster_groove_from_point_cloud(pcd_selected, voxel_size)
 
-    rviz_cloud = convertCloudFromOpen3dToRos(groove)
+    rviz_cloud = orh.o3dpc_to_rospc(groove, frame_id="d435_depth_optical_frame")
     pub_transformed.publish(rviz_cloud)
 
     input("\nwhen ready: ")
@@ -678,15 +684,15 @@ def detect_groove_workflow(pcd, transfromation_end_to_base, detect_feature="asym
         # the point cloud is wrt base link (correct)
         # however for visalization purpose, we need to set it to base
         pcd.paint_uniform_color([0.7, 0.7, 0.7])
-        rviz_cloud = convertCloudFromOpen3dToRos(pcd) #, frame_id="base")
+        rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame") #, frame_id="base")
         pub_pc.publish(rviz_cloud)
 
         groove.paint_uniform_color([1, 0, 0])
-        rviz_groove = convertCloudFromOpen3dToRos(groove) #, frame_id="base")
+        rviz_groove = orh.o3dpc_to_rospc(groove, frame_id="d435_depth_optical_frame") #, frame_id="base")
         pub_groove.publish(rviz_groove)
 
         trajectory.paint_uniform_color([0, 1, 0])
-        rviz_trajectory = convertCloudFromOpen3dToRos(trajectory, frame_id="base")
+        rviz_trajectory = orh.o3dpc_to_rospc(trajectory, frame_id="base")
         pub_trajectory.publish(rviz_trajectory)
 
         rospy.loginfo("Conversion and publish success ...\n")
@@ -754,7 +760,7 @@ if __name__ == "__main__":
     delete_percentage = 0.95
 
     received_ros_cloud = None
-    rospy.Subscriber('/d435i/depth/color/points', PointCloud2, callback_roscloud, queue_size=1)  
+    rospy.Subscriber('/d435/depth/color/points', PointCloud2, callback_roscloud, queue_size=1)  
 
     # -- Set publisher
     pub_capture = rospy.Publisher("capture", PointCloud2, queue_size=1)
@@ -798,11 +804,12 @@ if __name__ == "__main__":
     home3j = [-1.101422135029928, -2.0350402037249964, -1.2738335768329065, 0.19473803043365479, 2.264719247817993, -0.013235870991842091]
     home4j = [-0.4613278547870081, -1.5897491613971155, -1.8072245756732386, 0.19719326496124268, 1.337905764579773, 0.05008881911635399]
     home5j = [3.023427963256836, -2.160029713307516, 1.8763065338134766, -2.9134843985186976, -1.4816954771624964, -0.004962746297017873]
+    home6j = [0.19546271860599518, -1.8825424353228968, -0.6387022177325647, -2.1874735991107386, 1.580947756767273, 0.21206873655319214]
 
     # startj =  normal_plane
     startj = homej
     execution = True
-    max_dis = 0.4 # was 0.7; changed by Victor Wu on 26 July 2022.
+    max_dis = 0.7 # was 0.7; changed by Victor Wu on 26 July 2022.
     multilayer_exe = False
     total_time = []
     # sealing = True
@@ -822,7 +829,7 @@ if __name__ == "__main__":
             if capture == 'q':
                 break
             else:
-                startj = home1j
+                startj = home6j
                 robot.movej(startj, acc=0.8, vel=0.4, wait=True)
                 # convert it back to open3d, and draw
                 print("starting, please don't move the workpiece")
@@ -836,7 +843,7 @@ if __name__ == "__main__":
                     start = time.time() #start counting
                     received_open3d_cloud = convertCloudFromRosToOpen3d(received_ros_cloud)
 
-                    # rviz_cloud = convertCloudFromOpen3dToRos(received_open3d_cloud)
+                    # rviz_cloud = orh.o3dpc_to_rospc(received_open3d_cloud)
                     # pub_capture.publish(received_ros_cloud)
 
                     T_end_effector_wrt_base = robot.get_pose()

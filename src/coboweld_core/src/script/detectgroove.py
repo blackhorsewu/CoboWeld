@@ -129,7 +129,7 @@ def find_feature_value(pcd):
 
 def cluster_groove_from_point_cloud(pcd, voxel_size, verbose=False):
 
-    global neighbor
+    global neighbour
 
     # eps - the maximum distance between neighbours in a cluster, originally 0.005,
     # at least min_points to form a cluster.
@@ -137,7 +137,7 @@ def cluster_groove_from_point_cloud(pcd, voxel_size, verbose=False):
     # labels of the same cluster have their labels the same number.
     # if this number is -1, that is this cluster is noise.
     # labels = np.array(pcd.cluster_dbscan(eps=0.005, min_points=3, print_progress=True))
-    labels = np.array(pcd.cluster_dbscan(eps=0.005, min_points=3, print_progress=False))
+    labels = np.array(pcd.cluster_dbscan(eps=0.01, min_points=20, print_progress=False))
 
     # np.unique returns unique labels, label_counts is an array of number of that label
     label, label_counts = np.unique(labels, return_counts=True)
@@ -159,7 +159,6 @@ def cluster_groove_from_point_cloud(pcd, voxel_size, verbose=False):
     
     # Pick the points belong to the largest cluster
     groove_index = np.where(labels == label_number1)
-#    groove = pcd.select_down_sample(groove_index[0])
     groove1 = pcd.select_by_index(groove_index[0])
     groove1.paint_uniform_color([1, 0, 0])
 #    groove_index = np.where(labels == label_number2)
@@ -169,7 +168,7 @@ def cluster_groove_from_point_cloud(pcd, voxel_size, verbose=False):
 #    groove3 = pcd.select_by_index(groove_index[0])
 #    groove3.paint_uniform_color([0, 0, 1])
 
-    return groove1 #+groove2   #+groove3
+    return groove1 #+ groove2   #+groove3
 
 def thin_line(points, point_cloud_thickness=0.01, iterations=1, sample_points=0):
                     # point_cloud_thickness=0.015
@@ -326,7 +325,14 @@ def generate_path(groove):
     u_fine = np.linspace(0, 1, x.size*2)
 
     # Evaluate points on B-spline
-    x_fine, y_fine, z_fine = interpolate.splev(u_fine, tck)
+    try:
+      x_fine, y_fine, z_fine = interpolate.splev(u_fine, tck)
+    except TypeError:
+      print("\n ************* End ************* ")
+      robot.stop()
+      # close the communication, otherwise python will not shutdown properly
+      robot.close()
+      rospy.signal_shutdown("Finished shutting down")
 
     sorted_points = np.vstack((x_fine, y_fine, z_fine)).T
 
@@ -348,18 +354,20 @@ def detect_groove_workflow(pcd):
         # min_bound = (-0.025, -0.25, 0.2), 
         # max_bound = (0.05, 0.1, 0.5)  
         # 50mm x 50mm plane with 0.5m depth
-        min_bound = (-0.015, -0.025, 0.2), 
-        max_bound = (0.035, 0.025, 0.5)  
+        #min_bound = (-0.015, -0.025, 0.2), 
+        #max_bound = (0.035, 0.025, 0.5)  
+        min_bound = (-0.2, -0.04, 0.2), 
+        max_bound = (0.2, 0.04, 0.5)  
     )
 
     ## b. Define voxel size
-    voxelsize = 0.001 # 1mm cube for each voxel
+    voxelsize = 0.005 # 1mm cube for each voxel
 
 #    print("\n ************* Before cropping ************* ")
 #    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
 #    pub_captured.publish(rviz_cloud)
 
-    pcd = pcd.voxel_down_sample(voxel_size = voxelsize)
+    #pcd = pcd.voxel_down_sample(voxel_size = voxelsize)
     pcd = pcd.crop(bbox)
 
     ### it was 'remove_none_finite_points' in Open3D version 0.8.0... but
@@ -413,7 +421,7 @@ def detect_groove_workflow(pcd):
         ## that index data along the sorting axis
         ## in ascending order by default. So the smaller value first
         ## and the largest value at the end
-        np.argsort(feature_value_list)[delete_points:]
+        np.argsort(normalized_feature_value_list)[delete_points:]
         ## therefore this is a list of indices of the point cloud
         ## with the top 5 percent feature value
     )
@@ -461,10 +469,12 @@ if __name__ == "__main__":
   robot = urx.Robot("192.168.0.103")
 
   # Must have __init__(self) function for a class, similar to a C++ class constructor.
-  global received_ros_cloud, delete_percentage
+  global received_ros_cloud, delete_percentage, voxel_size, neighbour
 
+  voxel_size = 0.005
+  neighbour = 5*voxel_size
   # delete_percentage = 0.95 ORIGINAL VALUE
-  delete_percentage = 0.98
+  delete_percentage = 0.97
 
   received_ros_cloud = None
 
