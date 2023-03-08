@@ -99,7 +99,7 @@ def find_feature_value(pcd):
   # a // b = integer quotient of a divided by b
   # so neighbor (number of neighbors) whichever is smaller of 30 or the quotient 
   # of dividing the number of points by 100
-  neighbour = min(pc_number//100, 30)
+  neighbour = min(pc_number//50, 30)
   # neighbour = 30
   
   # for every point of the point cloud
@@ -170,7 +170,7 @@ def cluster_groove_from_point_cloud(pcd, voxel_size, verbose=False):
 
     return groove1 #+ groove2   #+groove3
 
-def thin_line(points, point_cloud_thickness=0.01, iterations=1, sample_points=0):
+def thin_line(points, point_cloud_thickness=0.012, iterations=1, sample_points=0):
                     # point_cloud_thickness=0.015
     if sample_points != 0:
         points = points[:sample_points]
@@ -367,6 +367,7 @@ def detect_groove_workflow(pcd):
 #    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
 #    pub_captured.publish(rviz_cloud)
 
+    print('voxel size: ', voxelsize)
     pcd = pcd.voxel_down_sample(voxel_size = voxelsize)
     pcd = pcd.crop(bbox)
 
@@ -399,7 +400,7 @@ def detect_groove_workflow(pcd):
     pcd.estimate_normals(
         search_param = o3d.geometry.KDTreeSearchParamHybrid(
             # radius = 0.01, max_nn = 30
-            radius = 0.05, max_nn = 30
+            radius = 0.05, max_nn = 25
         )
     )
 
@@ -474,7 +475,7 @@ if __name__ == "__main__":
   voxel_size = 0.005
   neighbour = 5*voxel_size
   # delete_percentage = 0.95 ORIGINAL VALUE
-  delete_percentage = 0.97
+  delete_percentage = 0.98
 
   received_ros_cloud = None
 
