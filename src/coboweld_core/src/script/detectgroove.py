@@ -137,7 +137,7 @@ def cluster_groove_from_point_cloud(pcd, voxel_size, verbose=False):
     # labels of the same cluster have their labels the same number.
     # if this number is -1, that is this cluster is noise.
     # labels = np.array(pcd.cluster_dbscan(eps=0.005, min_points=3, print_progress=True))
-    labels = np.array(pcd.cluster_dbscan(eps=0.01, min_points=20, print_progress=False))
+    labels = np.array(pcd.cluster_dbscan(eps=0.005, min_points=15, print_progress=False))
 
     # np.unique returns unique labels, label_counts is an array of number of that label
     label, label_counts = np.unique(labels, return_counts=True)
@@ -160,7 +160,7 @@ def cluster_groove_from_point_cloud(pcd, voxel_size, verbose=False):
     # Pick the points belong to the largest cluster
     groove_index = np.where(labels == label_number1)
     groove1 = pcd.select_by_index(groove_index[0])
-    groove1.paint_uniform_color([1, 0, 0])
+#    groove1.paint_uniform_color([1, 0, 0])
 #    groove_index = np.where(labels == label_number2)
 #    groove2 = pcd.select_by_index(groove_index[0])
 #    groove2.paint_uniform_color([0, 1, 0])
@@ -356,18 +356,18 @@ def detect_groove_workflow(pcd):
         # 50mm x 50mm plane with 0.5m depth
         #min_bound = (-0.015, -0.025, 0.2), 
         #max_bound = (0.035, 0.025, 0.5)  
-        min_bound = (-0.2, -0.04, 0.2), 
-        max_bound = (0.2, 0.04, 0.5)  
+        min_bound = (-0.1, -0.03, 0.2), 
+        max_bound = (0.15, 0.03, 0.4)  
     )
 
     ## b. Define voxel size
-    voxelsize = 0.005 # 1mm cube for each voxel
+    voxelsize = 0.004 # 1mm cube for each voxel
 
 #    print("\n ************* Before cropping ************* ")
 #    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
 #    pub_captured.publish(rviz_cloud)
 
-    #pcd = pcd.voxel_down_sample(voxel_size = voxelsize)
+    pcd = pcd.voxel_down_sample(voxel_size = voxelsize)
     pcd = pcd.crop(bbox)
 
     ### it was 'remove_none_finite_points' in Open3D version 0.8.0... but
@@ -428,7 +428,7 @@ def detect_groove_workflow(pcd):
 
     reply = input("Featured points selected.\nc to continue others to quit.")
     if (reply == "c"):
-      # pcd_selected.paint_uniform_color([0, 1, 0])
+      pcd_selected.paint_uniform_color([0, 1, 0])
       rviz_cloud = orh.o3dpc_to_rospc(pcd_selected, frame_id="d435_depth_optical_frame")
       pub_selected.publish(rviz_cloud)
 
@@ -438,7 +438,7 @@ def detect_groove_workflow(pcd):
       return
 
       # print("\n ************* Groove ************* ")
-    # groove = groove.paint_uniform_color([0, 1, 0])
+    groove = groove.paint_uniform_color([1, 0, 0])
     reply = input("Going to cluster selected points.\nc to continue others to quit.")
     if (reply == "c"):
       rviz_cloud = orh.o3dpc_to_rospc(groove, frame_id="d435_depth_optical_frame")
