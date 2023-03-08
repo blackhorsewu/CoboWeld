@@ -69,8 +69,8 @@
     <arg name="filters" value="pointcloud"/>
     <arg name="initial_reset" value="true"/>
     <arg name="ordered_pc" value="true"/>
--->
     <arg name="ordered_pc" value="false"/>
+-->
   </include>
 
 <!--
