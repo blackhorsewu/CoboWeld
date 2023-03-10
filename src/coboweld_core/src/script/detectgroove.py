@@ -99,9 +99,9 @@ def find_feature_value(pcd):
   # a // b = integer quotient of a divided by b
   # so neighbor (number of neighbors) whichever is smaller of 30 or the quotient 
   # of dividing the number of points by 100
-  neighbour = min(pc_number//65, 60)
-  # neighbour = 30
-  print("neighbour: ", neighbour)
+  # neighbour = min(pc_number//100, 30)
+  neighbour = 270
+  print("Feature value neighbour: ", neighbour)
   # for every point of the point cloud
   for index in range(pc_number):
       
@@ -139,7 +139,7 @@ def cluster_groove_from_point_cloud(pcd):
     # eps (float) - Density parameter that is used to find neighbouring points
     # the EPSilon radius for all points.
     # min_points (int) Minimum number of points to form a cluster
-    labels = np.array(pcd.cluster_dbscan(eps=0.008, min_points=3, print_progress=False))
+    labels = np.array(pcd.cluster_dbscan(eps=0.03, min_points=20, print_progress=False))
 
     # np.unique returns unique labels, label_counts is an array of number of that label
     label, label_counts = np.unique(labels, return_counts=True)
@@ -172,7 +172,7 @@ def cluster_groove_from_point_cloud(pcd):
 
     return groove1 #+ groove2   #+groove3
 
-def thin_line(points, point_cloud_thickness=0.005, iterations=1, sample_points=0):
+def thin_line(points, point_cloud_thickness=0.01, iterations=1, sample_points=0):
                     # point_cloud_thickness=0.015
     if sample_points != 0:
         points = points[:sample_points]
@@ -363,7 +363,7 @@ def detect_groove_workflow(pcd, first_round):
   )
 
   ## b. Define voxel size
-  voxelsize = 0.002 # 1mm cube for each voxel
+  voxelsize = 0.0009 # 1mm cube for each voxel
 
 #    print("\n ************* Before cropping ************* ")
 #    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
@@ -399,9 +399,11 @@ def detect_groove_workflow(pcd, first_round):
   pcd.estimate_normals(
       search_param = o3d.geometry.KDTreeSearchParamHybrid(
           # radius = 0.01, max_nn = 30
-          radius = 0.018, max_nn = 80
+          radius = 0.027, max_nn = 270
       )
   )
+
+  print('normal estimation neighbours: radius: 0.027, max_nn: 270')
 
   pcd.normalize_normals()
   pcd.orient_normals_towards_camera_location(camera_location = [0.0, 0.0, 0.0])
@@ -474,7 +476,7 @@ if __name__ == "__main__":
   global received_ros_cloud, delete_percentage
 
   # delete_percentage = 0.95 ORIGINAL VALUE
-  delete_percentage = 0.96
+  delete_percentage = 0.97
 
   received_ros_cloud = None
 
@@ -502,7 +504,6 @@ if __name__ == "__main__":
                                       frame_id="d435_depth_optical_frame")
       pub_captured.publish(rviz_cloud)
 
-      print('first_round: ', first_round)
       detect_groove_workflow(received_open3d_cloud, first_round)
 
       first_round = False
