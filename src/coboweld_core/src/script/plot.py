@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 #pc = o3d.io.read_point_cloud('50x50.pcd')
 #pc = o3d.io.read_point_cloud('parallel.pcd')
-pc = o3d.io.read_point_cloud('barpoints.pcd')
+pc = o3d.io.read_point_cloud('new.pcd')
 pointcloud = np.asarray(pc.points)
 
 x = pointcloud[:, 0]
@@ -77,11 +77,11 @@ shift_list = ((shift_list - min_shift) / shift_range) * cloud_range + min_cloud
 fig = plt.figure(figsize=(10,10))
 ax = plt.axes(projection='3d')
 ax.grid()
-ax.set_title('The "patch1" point cloud and its point density')
+ax.set_title('The "new" point cloud and its point density')
 # c='r' ; colour is RED, s=10 ; size is 10
-#ax.scatter(x, y, z, c='g', s=1)
+ax.scatter(x, y, z, c='g', s=1)
 ax.scatter(x, y, density, c='r', s=5)
-#ax.scatter(x, y, shift_list, c='b', s=10)
+ax.scatter(x, y, shift_list, c='b', s=10)
 ax.set_xlabel('x', labelpad=20)
 ax.set_ylabel('y', labelpad=20)
 ax.set_zlabel('z', labelpad=20)
