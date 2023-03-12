@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 
 #pc = o3d.io.read_point_cloud('50x50.pcd')
 #pc = o3d.io.read_point_cloud('parallel.pcd')
-#filename = input('file name: ')
-filename = '2mm.pcd'
+filename = input('file name: ')
+# filename = '2mm.pcd'
 pcd = o3d.io.read_point_cloud(filename)
 pointcloud = np.asarray(pcd.points)
 
@@ -65,7 +65,7 @@ for index in range(count):
     # number of points less than
     dist = np.linalg.norm(q_pt - pointcloud[cnt])
     #print('distance: ', dist)
-    if dist < 0.003: d += 1
+    if dist < 0.002: d += 1
   '''
 
   # shift = np.linalg.norm(centroid - pointcloud[index])
@@ -84,12 +84,12 @@ max_cloud = np.max(pointcloud[:, 2])
 min_cloud = np.min(pointcloud[:, 2])
 cloud_range = max_cloud - min_cloud
 
-max = np.max(density)
-min = np.min(density)
-range = max - min
+max_density = np.max(density)
+min_density = np.min(density)
+density_range = max_density - min_density
 
 #shift_list = shift_list * density
-density = ((density - min) / range) * cloud_range + min_cloud
+density = ((density - min_density) / density_range) * cloud_range + min_cloud
 
 max_shift = np.max(shift_list)
 min_shift = np.min(shift_list)
@@ -100,7 +100,7 @@ shift_list = ((shift_list - min_shift) / shift_range) * cloud_range + min_cloud
 fig = plt.figure(figsize=(10,10))
 ax = plt.axes(projection='3d')
 ax.grid()
-ax.set_title('The "new" point cloud and its point density')
+ax.set_title('The point cloud and its feature values')
 # c='r' ; colour is RED, s=10 ; size is 10
 ax.scatter(x, y, z, c='g', s=1)
 #ax.scatter(x, y, density, c='r', s=5)
@@ -108,7 +108,7 @@ ax.scatter(x, y, shift_list, c='b', s=10)
 ax.set_xlabel('x', labelpad=20)
 ax.set_ylabel('y', labelpad=20)
 ax.set_zlabel('z', labelpad=20)
-ax.set_zlabel('point density', labelpad=20)
+ax.set_zlabel('feature values', labelpad=20)
 
 plt.show()
 

@@ -12,7 +12,7 @@ pc_number = np.asarray(pcd.points).shape[0]
 
 pcd.estimate_normals(
   search_param = o3d.geometry.KDTreeSearchParamHybrid(
-  radius = 0.01, max_nn = 50
+  radius = 0.01, max_nn = 150
   )
 )
 pcd.normalize_normals()
@@ -25,7 +25,7 @@ feature_value_list = []
 
 #neighbours = min(pc_number//100, 30)
 
-neighbours = 30
+neighbours = 130
 
 for index in range(pc_number):
   [k, idx, _] = pcd_tree.search_knn_vector_3d(pcd.points[index], neighbours)

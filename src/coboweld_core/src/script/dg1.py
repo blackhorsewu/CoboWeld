@@ -100,7 +100,7 @@ def find_feature_value(pcd):
   # so neighbor (number of neighbors) whichever is smaller of 30 or the quotient 
   # of dividing the number of points by 100
   # neighbour = min(pc_number//100, 30)
-  neighbour = 270
+  neighbour = 200
   print("Feature value neighbour: ", neighbour)
   # for every point of the point cloud
   for index in range(pc_number):
@@ -111,7 +111,7 @@ def find_feature_value(pcd):
       [k, idx, _] = pcd_tree.search_knn_vector_3d(pcd.points[index], neighbour)
 
       # get rid of the query point in the neighbourhood
-      idx = idx[1:]
+      # idx = idx[1:]
 
       # n_list, computed above, is an array of normals of every point.
       # 'vector' is then a vector with its components the arithmetic mean of every
@@ -139,7 +139,7 @@ def cluster_groove_from_point_cloud(pcd):
     # eps (float) - Density parameter that is used to find neighbouring points
     # the EPSilon radius for all points.
     # min_points (int) Minimum number of points to form a cluster
-    labels = np.array(pcd.cluster_dbscan(eps=0.005, min_points=10, print_progress=False))
+    labels = np.array(pcd.cluster_dbscan(eps=0.003, min_points=10, print_progress=False))
 
     # np.unique returns unique labels, label_counts is an array of number of that label
     label, label_counts = np.unique(labels, return_counts=True)
@@ -363,7 +363,7 @@ def detect_groove_workflow(pcd, first_round):
   )
 
   ## b. Define voxel size
-  voxelsize = 0.0009 # 1mm cube for each voxel
+  voxelsize = 0.001 # 1mm cube for each voxel
 
 #    print("\n ************* Before cropping ************* ")
 #    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
@@ -398,12 +398,12 @@ def detect_groove_workflow(pcd, first_round):
   # 2. Estimate normal toward camera location and normalize it.
   pcd.estimate_normals(
       search_param = o3d.geometry.KDTreeSearchParamHybrid(
-          # radius = 0.01, max_nn = 30
-          radius = 0.027, max_nn = 270
+          radius = 0.025, max_nn = 200
+          # radius = 0.027, max_nn = 270
       )
   )
 
-  print('normal estimation neighbours: radius: 0.027, max_nn: 270')
+  print('normal estimation neighbours: radius: 0.01, max_nn: 30')
 
   pcd.normalize_normals()
   pcd.orient_normals_towards_camera_location(camera_location = [0.0, 0.0, 0.0])
