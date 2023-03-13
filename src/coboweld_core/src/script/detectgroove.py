@@ -122,7 +122,7 @@ def find_feature_value(pcd):
       # the bigger the feature value, meaning the normal of that point is more 
       # different from its neighbours
       feature_value = np.linalg.norm(
-          (vector - (n_list[index, :] * np.dot(vector,n_list[index, :]))) / np.linalg.norm(n_list[index, :]))
+          vector - (n_list[index, :] * np.dot(vector,n_list[index, :])))
       feature_value_list.append(feature_value)
 
   return np.array(feature_value_list)
@@ -358,18 +358,19 @@ def detect_groove_workflow(pcd, first_round):
       # 50mm x 50mm plane with 0.5m depth
       #min_bound = (-0.015, -0.025, 0.2), 
       #max_bound = (0.035, 0.025, 0.5)  
-      min_bound = (-0.1, -0.03, 0.2), 
-      max_bound = (0.15, 0.03, 0.4)  
+      min_bound = (-0.1, -0.04, 0.25), 
+      max_bound = (0.2, 0.04, 0.5)  
   )
 
   ## b. Define voxel size
-  voxelsize = 0.0009 # 1mm cube for each voxel
+  voxelsize = 0.0015 # 1mm cube for each voxel
 
 #    print("\n ************* Before cropping ************* ")
 #    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
 #    pub_captured.publish(rviz_cloud)
 
-  print('voxel size: ', voxelsize)
+  print('voxel size: no downsample')
+  # print('voxel size: ', voxelsize)
   # Actually down sampling the point cloud captured
   pcd = pcd.voxel_down_sample(voxel_size = voxelsize)
   
@@ -399,7 +400,7 @@ def detect_groove_workflow(pcd, first_round):
   pcd.estimate_normals(
       search_param = o3d.geometry.KDTreeSearchParamHybrid(
           # radius = 0.01, max_nn = 30
-          radius = 0.027, max_nn = 270
+          radius = 0.015, max_nn = 250
       )
   )
 

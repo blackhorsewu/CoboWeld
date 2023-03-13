@@ -5,19 +5,22 @@ import open3d as o3d
 import numpy as np
 import matplotlib.pyplot as plt
 
-pcd = o3d.io.read_point_cloud('new.pcd')
+pcd = o3d.io.read_point_cloud('1mmvoxel.pcd')
 
 pcd_tree = o3d.geometry.KDTreeFlann(pcd)
 pc_number = np.asarray(pcd.points).shape[0]
 
+print('number of points: ', pc_number)
+
 pcd.estimate_normals(
   search_param = o3d.geometry.KDTreeSearchParamHybrid(
-  radius = 0.01, max_nn = 150
+  radius = 0.01, max_nn = 250
   )
 )
 pcd.normalize_normals()
 pcd.orient_normals_towards_camera_location(camera_location = [0.0, 0.0, 0.0])
 
+'''
 n_list = np.asarray(pcd.normals)
 
 
@@ -36,7 +39,7 @@ for index in range(pc_number):
   )
 
   # find the number of points within 5mm radius
-'''
+
   q_pt = np.asarray(pcd.points)[index] # query point position
   nr_pts = 0 # number of neighbouring points
   for cnt in idx:
