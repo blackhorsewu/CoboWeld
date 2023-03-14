@@ -100,7 +100,7 @@ def find_feature_value(pcd):
   # so neighbor (number of neighbors) whichever is smaller of 30 or the quotient 
   # of dividing the number of points by 100
   # neighbour = min(pc_number//100, 30)
-  neighbour = 5
+  neighbour = 6
   print("Feature value neighbour: ", neighbour)
   # for every point of the point cloud
   for index in range(pc_number):
@@ -139,7 +139,7 @@ def cluster_groove_from_point_cloud(pcd):
     # eps (float) - Density parameter that is used to find neighbouring points
     # the EPSilon radius for all points.
     # min_points (int) Minimum number of points to form a cluster
-    labels = np.array(pcd.cluster_dbscan(eps=0.0055, min_points=30, print_progress=False))
+    labels = np.array(pcd.cluster_dbscan(eps=0.01, min_points=6, print_progress=False))
 
     # np.unique returns unique labels, label_counts is an array of number of that label
     label, label_counts = np.unique(labels, return_counts=True)
@@ -400,7 +400,7 @@ def detect_groove_workflow(pcd, first_round):
   pcd.estimate_normals(
       search_param = o3d.geometry.KDTreeSearchParamHybrid(
           # radius = 0.01, max_nn = 30
-          radius = 0.015, max_nn = 300
+          radius = 0.015, max_nn = 270
       )
   )
 
@@ -489,7 +489,7 @@ if __name__ == "__main__":
   global received_ros_cloud, delete_percentage
 
   # delete_percentage = 0.95 ORIGINAL VALUE
-  delete_percentage = 0.97
+  delete_percentage = 0.96
 
   received_ros_cloud = None
 
