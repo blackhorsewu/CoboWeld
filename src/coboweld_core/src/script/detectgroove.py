@@ -369,8 +369,8 @@ def detect_groove_workflow(pcd, first_round):
 #    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
 #    pub_captured.publish(rviz_cloud)
 
-  print('voxel size: no downsample')
-  # print('voxel size: ', voxelsize)
+  # print('voxel size: no downsample')
+  print('voxel size: ', voxelsize)
   # Actually down sampling the point cloud captured
   pcd = pcd.voxel_down_sample(voxel_size = voxelsize)
   
