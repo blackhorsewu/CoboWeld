@@ -469,8 +469,8 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 7
-      Size (m): 0.009999999776482582
-      Style: Points
+      Size (m): 0.0020000000949949026
+      Style: Spheres
       Topic: /selected
       Unreliable: false
       Use Fixed Frame: true
@@ -497,8 +497,8 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 9
-      Size (m): 0.009999999776482582
-      Style: Points
+      Size (m): 0.003000000026077032
+      Style: Spheres
       Topic: /clustered
       Unreliable: false
       Use Fixed Frame: true
@@ -525,8 +525,8 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 8
-      Size (m): 0.009999999776482582
-      Style: Points
+      Size (m): 0.0020000000949949026
+      Style: Spheres
       Topic: /path
       Unreliable: false
       Use Fixed Frame: true
@@ -604,9 +604,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8797973990440369
+      Pitch: 1.1397974491119385
       Target Frame: <Fixed Frame>
-      Yaw: 3.1753172874450684
+      Yaw: 3.1203105449676514
     Saved: ~
 Window Geometry:
   Camera:

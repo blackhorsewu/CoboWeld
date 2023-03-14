@@ -100,7 +100,7 @@ def find_feature_value(pcd):
   # so neighbor (number of neighbors) whichever is smaller of 30 or the quotient 
   # of dividing the number of points by 100
   # neighbour = min(pc_number//100, 30)
-  neighbour = 270
+  neighbour = 5
   print("Feature value neighbour: ", neighbour)
   # for every point of the point cloud
   for index in range(pc_number):
@@ -139,7 +139,7 @@ def cluster_groove_from_point_cloud(pcd):
     # eps (float) - Density parameter that is used to find neighbouring points
     # the EPSilon radius for all points.
     # min_points (int) Minimum number of points to form a cluster
-    labels = np.array(pcd.cluster_dbscan(eps=0.005, min_points=10, print_progress=False))
+    labels = np.array(pcd.cluster_dbscan(eps=0.0055, min_points=30, print_progress=False))
 
     # np.unique returns unique labels, label_counts is an array of number of that label
     label, label_counts = np.unique(labels, return_counts=True)
@@ -358,8 +358,8 @@ def detect_groove_workflow(pcd, first_round):
       # 50mm x 50mm plane with 0.5m depth
       #min_bound = (-0.015, -0.025, 0.2), 
       #max_bound = (0.035, 0.025, 0.5)  
-      min_bound = (-0.1, -0.04, 0.25), 
-      max_bound = (0.2, 0.04, 0.5)  
+      min_bound = (-0.100, -0.050, 0.25), 
+      max_bound = (0.100, 0.040, 0.35)  
   )
 
   ## b. Define voxel size
@@ -400,7 +400,7 @@ def detect_groove_workflow(pcd, first_round):
   pcd.estimate_normals(
       search_param = o3d.geometry.KDTreeSearchParamHybrid(
           # radius = 0.01, max_nn = 30
-          radius = 0.015, max_nn = 250
+          radius = 0.015, max_nn = 300
       )
   )
 
@@ -429,6 +429,17 @@ def detect_groove_workflow(pcd, first_round):
       ## with the top 5 percent feature value
   )
 
+  # define an inner bounding box for border removing
+  # 5mm less on each side
+  ibbox = o3d.geometry.AxisAlignedBoundingBox(
+     min_bound = (-0.095, -0.045, 0.255), 
+     max_bound = (0.095, 0.035, 0.345)  
+  )
+
+  pcd_selected = pcd_selected.crop(ibbox)
+
+  print('Selected: ', pcd_selected)
+
   reply = input("Featured points selected.\nc to continue others to quit.")
   if (reply == "c"):
     pcd_selected.paint_uniform_color([0, 1, 0])
@@ -436,6 +447,7 @@ def detect_groove_workflow(pcd, first_round):
     pub_selected.publish(rviz_cloud)
 
     groove = cluster_groove_from_point_cloud(pcd_selected)
+    print('Groove: ',np.asarray(groove))
   else:
     rospy.signal_shutdown("Finished shutting down")
     return
