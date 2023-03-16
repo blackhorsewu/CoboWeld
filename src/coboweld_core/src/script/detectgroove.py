@@ -65,6 +65,26 @@ import urx
 
 import csv
 
+#
+# Define Parameter values
+#
+# 1. Feature value neighbours
+feature_neighbours = 7
+# 2. Distance between cluster neighbours
+cluster_neighbour_distance = 0.01 # m or 10mm
+# 3. Minimum cluster members
+min_cluster_memb = 7
+# 4. Point cloud thickness in thin_line
+thickness = 0.0143
+# 5. Voxel size
+voxelsize = 0.001 # m or 1mm
+# 6. Normal estimation neighbourhood
+# radius
+my_radius = 0.012 # m or 12mm
+# maximum nearest neighbours
+maxnn = 452
+# 7. Delete percentage of feature values
+percentage = 0.96
 
 # This is for conversion from Open3d point cloud to ROS point cloud
 # Note: Add `.ravel()` to the end of line 261 in the `open3d_ros_helper.py` before it can work
@@ -109,7 +129,7 @@ def find_feature_value(pcd):
   # so neighbor (number of neighbors) whichever is smaller of 30 or the quotient 
   # of dividing the number of points by 100
   # neighbour = min(pc_number//100, 30)
-  neighbour = 7
+  neighbour = feature_neighbours
   print("Feature value neighbour: ", neighbour)
   # for every point of the point cloud
   for index in range(pc_number):
@@ -148,7 +168,9 @@ def cluster_groove_from_point_cloud(pcd):
     # eps (float) - Density parameter that is used to find neighbouring points
     # the EPSilon radius for all points.
     # min_points (int) Minimum number of points to form a cluster
-    labels = np.array(pcd.cluster_dbscan(eps=0.01, min_points=7, print_progress=False))
+    labels = np.array(pcd.cluster_dbscan(eps=cluster_neighbour_distance, 
+                                         min_points=min_cluster_memb, 
+                                         print_progress=False))
 
     # np.unique returns unique labels, label_counts is an array of number of that label
     label, label_counts = np.unique(labels, return_counts=True)
@@ -172,7 +194,7 @@ def cluster_groove_from_point_cloud(pcd):
 
     return groove1
 
-def thin_line(points, point_cloud_thickness=0.0143, iterations=1, sample_points=0):
+def thin_line(points, point_cloud_thickness=thickness, iterations=1, sample_points=0):
 
     if sample_points != 0:
         points = points[:sample_points]
@@ -363,7 +385,7 @@ def detect_groove_workflow(pcd, first_round):
   )
 
   ## b. Define voxel size
-  voxelsize = 0.001 # 1mm cube for each voxel
+  # Declared at the top as 1mm cube for each voxel
 
 #    print("\n ************* Before cropping ************* ")
 #    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
@@ -399,8 +421,7 @@ def detect_groove_workflow(pcd, first_round):
   # 2. Estimate normal toward camera location and normalize it.
   pcd.estimate_normals(
       search_param = o3d.geometry.KDTreeSearchParamHybrid(
-          # radius = 0.01, max_nn = 30
-          radius = 0.012, max_nn = 452
+          radius = my_radius, max_nn = maxnn
       )
   )
 
@@ -489,7 +510,7 @@ if __name__ == "__main__":
   global received_ros_cloud, delete_percentage
 
   # delete_percentage = 0.95 ORIGINAL VALUE
-  delete_percentage = 0.97
+  delete_percentage = percentage
 
   received_ros_cloud = None
 

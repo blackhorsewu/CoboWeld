@@ -413,7 +413,7 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.0010000000474974513
+      Size (m): 0.004999999888241291
       Style: Spheres
       Topic: /d435/depth/color/points
       Unreliable: false
@@ -441,7 +441,7 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 5
-      Size (m): 0.0010000000474974513
+      Size (m): 0.003000000026077032
       Style: Spheres
       Topic: /captured
       Unreliable: false
@@ -525,7 +525,7 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 8
-      Size (m): 0.002199999988079071
+      Size (m): 0.004999999888241291
       Style: Spheres
       Topic: /path
       Unreliable: false
@@ -588,7 +588,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 0.5176993608474731
+      Distance: 1.6201441287994385
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -596,17 +596,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.6714711785316467
-        Y: -0.02204253152012825
-        Z: 0.1093088686466217
+        X: 0.5397940874099731
+        Y: -0.09523331373929977
+        Z: 0.2215866595506668
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.039797306060791
+      Pitch: 0.7547972202301025
       Target Frame: <Fixed Frame>
-      Yaw: 3.1003026962280273
+      Yaw: 2.3452959060668945
     Saved: ~
 Window Geometry:
   Camera:
