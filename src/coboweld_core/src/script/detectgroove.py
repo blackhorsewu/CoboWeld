@@ -324,7 +324,7 @@ def sort_points(points, regression_lines, sorted_point_distance=0.01):
 
     return np.array(sort_points_right)
 
-# To generate a welding path for the torch. This is only a path and should be called a trajectory!
+# To generate a welding path for the torch. This is only a path and should not be called a trajectory!
 def generate_path(groove):
 
     points = np.asarray(groove.points)
@@ -425,7 +425,7 @@ def detect_groove_workflow(pcd, first_round):
       )
   )
 
-  print('normal estimation neighbours: radius: 0.01, max_nn: 30')
+  print('normal estimation neighbours: radius: ', my_radius, 'max_nn: ', maxnn)
 
   pcd.normalize_normals()
   pcd.orient_normals_towards_camera_location(camera_location = [0.0, 0.0, 0.0])
