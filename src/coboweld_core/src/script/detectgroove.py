@@ -148,7 +148,7 @@ def cluster_groove_from_point_cloud(pcd):
     # eps (float) - Density parameter that is used to find neighbouring points
     # the EPSilon radius for all points.
     # min_points (int) Minimum number of points to form a cluster
-    labels = np.array(pcd.cluster_dbscan(eps=0.005, min_points=7, print_progress=False))
+    labels = np.array(pcd.cluster_dbscan(eps=0.01, min_points=7, print_progress=False))
 
     # np.unique returns unique labels, label_counts is an array of number of that label
     label, label_counts = np.unique(labels, return_counts=True)
