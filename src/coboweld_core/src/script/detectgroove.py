@@ -25,6 +25,9 @@
 *  Revision 4: 9 February, 2023.
 *     Introduce URx into CoboWeld.
 *
+*  Revision 5: 16 March, 2323.
+*     Parameters adjusted for the Y-tube joint.
+*
 *  Copyright (c) 2022-2023 Victor W H Wu
 *
 *  Description:
@@ -64,8 +67,11 @@ import csv
 
 
 # This is for conversion from Open3d point cloud to ROS point cloud
+# Note: Add `.ravel()` to the end of line 261 in the `open3d_ros_helper.py` before it can work
+# Refer to README.md 
 from open3d_ros_helper import open3d_ros_helper as orh
 
+# Call back function to receive a ROS point cloud published by the RealSense D435 camera
 def callback_roscloud(ros_cloud):
     global received_ros_cloud
 
@@ -73,7 +79,10 @@ def callback_roscloud(ros_cloud):
 
 def normalize_feature(feature_value_list):
     
-    normalized_feature_value_list = (feature_value_list-feature_value_list.min())/(feature_value_list.max()-feature_value_list.min())
+    max_value = feature_value_list.max()
+    min_value = feature_value_list.min()
+    feature_value_range = max_value - min_value
+    normalized_feature_value_list = (feature_value_list - min_value)/ feature_value_range
 
     return np.array(normalized_feature_value_list)
 
@@ -100,7 +109,7 @@ def find_feature_value(pcd):
   # so neighbor (number of neighbors) whichever is smaller of 30 or the quotient 
   # of dividing the number of points by 100
   # neighbour = min(pc_number//100, 30)
-  neighbour = 6
+  neighbour = 7
   print("Feature value neighbour: ", neighbour)
   # for every point of the point cloud
   for index in range(pc_number):
@@ -139,7 +148,7 @@ def cluster_groove_from_point_cloud(pcd):
     # eps (float) - Density parameter that is used to find neighbouring points
     # the EPSilon radius for all points.
     # min_points (int) Minimum number of points to form a cluster
-    labels = np.array(pcd.cluster_dbscan(eps=0.01, min_points=6, print_progress=False))
+    labels = np.array(pcd.cluster_dbscan(eps=0.005, min_points=7, print_progress=False))
 
     # np.unique returns unique labels, label_counts is an array of number of that label
     label, label_counts = np.unique(labels, return_counts=True)
@@ -149,8 +158,6 @@ def cluster_groove_from_point_cloud(pcd):
     ## So, after sorting ascending the labels with the cluster with largest number of
     ## members at the end. That is the largest cluster.
     label_number1 = label[np.argsort(label_counts)[-1]]
-#    label_number2 = label[np.argsort(label_counts)[-2]]
-#    label_number3 = label[np.argsort(label_counts)[-3]]
 
     if label_number1 == -1:
         if label.shape[0]>1:
@@ -162,18 +169,11 @@ def cluster_groove_from_point_cloud(pcd):
     # Pick the points belong to the largest cluster
     groove_index = np.where(labels == label_number1)
     groove1 = pcd.select_by_index(groove_index[0])
-#    groove1.paint_uniform_color([1, 0, 0])
-#    groove_index = np.where(labels == label_number2)
-#    groove2 = pcd.select_by_index(groove_index[0])
-#    groove2.paint_uniform_color([0, 1, 0])
-#    groove_index = np.where(labels == label_number3)
-#    groove3 = pcd.select_by_index(groove_index[0])
-#    groove3.paint_uniform_color([0, 0, 1])
 
-    return groove1 #+ groove2   #+groove3
+    return groove1
 
 def thin_line(points, point_cloud_thickness=0.0143, iterations=1, sample_points=0):
-                    # point_cloud_thickness=0.015
+
     if sample_points != 0:
         points = points[:sample_points]
 
@@ -363,7 +363,7 @@ def detect_groove_workflow(pcd, first_round):
   )
 
   ## b. Define voxel size
-  voxelsize = 0.0015 # 1mm cube for each voxel
+  voxelsize = 0.001 # 1mm cube for each voxel
 
 #    print("\n ************* Before cropping ************* ")
 #    rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
@@ -400,11 +400,11 @@ def detect_groove_workflow(pcd, first_round):
   pcd.estimate_normals(
       search_param = o3d.geometry.KDTreeSearchParamHybrid(
           # radius = 0.01, max_nn = 30
-          radius = 0.015, max_nn = 270
+          radius = 0.012, max_nn = 452
       )
   )
 
-  print('normal estimation neighbours: radius: 0.027, max_nn: 270')
+  print('normal estimation neighbours: radius: 0.01, max_nn: 30')
 
   pcd.normalize_normals()
   pcd.orient_normals_towards_camera_location(camera_location = [0.0, 0.0, 0.0])
@@ -432,8 +432,8 @@ def detect_groove_workflow(pcd, first_round):
   # define an inner bounding box for border removing
   # 5mm less on each side
   ibbox = o3d.geometry.AxisAlignedBoundingBox(
-     min_bound = (-0.095, -0.045, 0.255), 
-     max_bound = (0.095, 0.035, 0.345)  
+     min_bound = (-0.095, -0.047, 0.255), 
+     max_bound = (0.095, 0.037, 0.345)  
   )
 
   pcd_selected = pcd_selected.crop(ibbox)
@@ -489,7 +489,7 @@ if __name__ == "__main__":
   global received_ros_cloud, delete_percentage
 
   # delete_percentage = 0.95 ORIGINAL VALUE
-  delete_percentage = 0.96
+  delete_percentage = 0.97
 
   received_ros_cloud = None
 
