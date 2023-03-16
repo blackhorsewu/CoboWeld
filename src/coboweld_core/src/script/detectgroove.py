@@ -172,7 +172,7 @@ def cluster_groove_from_point_cloud(pcd):
 
     return groove1 #+ groove2   #+groove3
 
-def thin_line(points, point_cloud_thickness=0.01, iterations=1, sample_points=0):
+def thin_line(points, point_cloud_thickness=0.0143, iterations=1, sample_points=0):
                     # point_cloud_thickness=0.015
     if sample_points != 0:
         points = points[:sample_points]
