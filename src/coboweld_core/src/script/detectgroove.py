@@ -380,8 +380,8 @@ def detect_groove_workflow(pcd, first_round):
       # 50mm x 50mm plane with 0.5m depth
       #min_bound = (-0.015, -0.025, 0.2), 
       #max_bound = (0.035, 0.025, 0.5)  
-      min_bound = (-0.100, -0.050, 0.25), 
-      max_bound = (0.100, 0.040, 0.35)  
+      min_bound = (-0.100, -0.07, 0.25), 
+      max_bound = (0.100, 0.03, 0.35)  
   )
 
   ## b. Define voxel size
@@ -453,8 +453,8 @@ def detect_groove_workflow(pcd, first_round):
   # define an inner bounding box for border removing
   # 5mm less on each side
   ibbox = o3d.geometry.AxisAlignedBoundingBox(
-     min_bound = (-0.095, -0.047, 0.255), 
-     max_bound = (0.095, 0.037, 0.345)  
+     min_bound = (-0.095, -0.066, 0.255), 
+     max_bound = (0.095, 0.026, 0.345)  
   )
 
   pcd_selected = pcd_selected.crop(ibbox)
