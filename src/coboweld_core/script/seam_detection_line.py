@@ -493,7 +493,7 @@ def trajectory_execution(pose_list):
         # this is correct for the Fronius Straight Torch
         torch_tcp = [0.0, -0.111, 0.366, 0.0, 0.0, 0.0] 
         robot.set_tcp(torch_tcp)
-        time.sleep(0.2) #pause is essentail for tcp to take effect, min time is 0.1s
+        time.sleep(0.2) #pause is essential for tcp to take effect, min time is 0.1s
 
         # move to ready position
         robot.movel(pose_list[0], acc=0.1, vel=0.1, wait=True)

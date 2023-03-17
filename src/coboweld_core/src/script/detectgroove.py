@@ -55,9 +55,12 @@ import math
 
 from std_msgs.msg import Header
 from sensor_msgs.msg import PointCloud2, PointField
+from geometry_msgs.msg import PoseStamped, Pose, PoseArray, Point
+from visualization_msgs.msg import Marker, MarkerArray
 import sensor_msgs.point_cloud2 as pc2
 
 import vg # Vector Geometry
+from scipy.spatial.transform import Rotation as R
 from scipy import interpolate
 import scipy.spatial as spatial
 
@@ -96,6 +99,30 @@ def callback_roscloud(ros_cloud):
     global received_ros_cloud
 
     received_ros_cloud = ros_cloud
+
+def transform_cam_wrt_base(pcd, T_end_effector_wrt_base):
+
+  # Added by Victor Wu on 25 July 2022 for Realsense D435i on UR5
+  # Updated on 29 July 2022. Needs calibration later.
+  # T_cam_wrt_end_effector = np.array( [[ 1.0000000,  0.0000000,  0.0000000, -0.01270],
+  #                                     [ 0.0000000,  1.0000000,  0.0000000, -0.04000],
+  #                                     [ 0.0000000,  0.0000000,  1.0000000,  0.18265],
+  #                                     [ 0.0000000,  0.0000000,  0.0000000,  1.00000]] )
+  # Z in translation added 0.015m because base is 0.015m above table
+  T_cam_wrt_end_effector = np.array( [[ 1.0000000,  0.0000000,  0.0000000, -0.01750],
+                                      [ 0.0000000,  1.0000000,  0.0000000, -0.03800],
+                                      [ 0.0000000,  0.0000000,  1.0000000,  0.18400],
+                                      [ 0.0000000,  0.0000000,  0.0000000,  1.00000]] )
+
+  pcd_copy1 = copy.deepcopy(pcd).transform(T_cam_wrt_end_effector)
+  # pcd_copy1.paint_uniform_color([0.5, 0.5, 1]) 
+  # Do not change the colour, commented out by Victor Wu on 26 July 2022.
+
+  pcd_copy2 = copy.deepcopy(pcd_copy1).transform(T_end_effector_wrt_base)
+  # pcd_copy2.paint_uniform_color([1, 0, 0])
+  # Do not change the colour, commented out by Victor Wu on 26 July 2022.
+  # o3d.visualization.draw_geometries([pcd, pcd_copy1, pcd_copy1, pcd_copy2])
+  return pcd_copy2
 
 def normalize_feature(feature_value_list):
     
@@ -365,6 +392,106 @@ def generate_path(groove):
 
     return path_pcd
 
+
+def publish_path_poses(poses):
+
+  PoseList_torch_rviz = PoseArray()
+
+  for pose in poses:
+
+    r = R.from_rotvec(pose[3:])
+    orientation = r.as_quat()
+
+    #publish to torch_pose
+    torch_pose_rviz = Pose()
+    #tip position
+    torch_pose_rviz.position.x = pose[0]
+    torch_pose_rviz.position.y = pose[1]
+    torch_pose_rviz.position.z = pose[2]
+    #tip orientation
+    torch_pose_rviz.orientation.x = orientation[0]
+    torch_pose_rviz.orientation.y = orientation[1]
+    torch_pose_rviz.orientation.z = orientation[2]
+    torch_pose_rviz.orientation.w = orientation[3]
+    #publish torch tip pose trajectory
+    PoseList_torch_rviz.poses.append(torch_pose_rviz)
+
+  PoseList_torch_rviz.header.frame_id = 'd435_depth_optical_frame'
+  PoseList_torch_rviz.header.stamp = rospy.Time.now()
+  pub_poses.publish(PoseList_torch_rviz)
+
+# After a welding path is generated, it is necessary to find the orientation of the 
+# welding torch before a pose for each point can be sent to the robot for execution.
+def find_orientation(path): # path is the detected groove with equidistance points
+
+  path = np.asarray(path.points)
+
+  # A list of all the Rotation Vectors used to specify the orientation in UR format
+  rotvecs = []
+
+  # for each of the points on the path
+  for i in range(path.shape[0]):
+    # Find the vector pointing from one point to the next, diff_x,
+    # if this is the last point, subtract the point before
+    if i == path.shape[0] - 1:
+      diff_x = path[i] - path[i - 1]
+    # otherwise subtract from the next point
+    else:
+      diff_x = path[i + 1] - path[i]
+    # use the horizontal line as the Y-axis
+    y_axis = np.array([-1.0, 0.0, 0.0]) # the negative Y axis World
+    y_axis = y_axis/np.linalg.norm(y_axis, axis=0) # normalize it
+    # The diff_x cross the Y-axis (the horizontal line) gives the Z-axis
+    # pointing into the tube
+    z_axis = np.cross(diff_x, y_axis)
+    z_axis = z_axis/np.linalg.norm(z_axis, axis=0) # normalize it
+    # The Y-axis cross the Z-axis gives the X-axis
+    x_axis = np.cross(y_axis, z_axis)
+    x_axis = x_axis/np.linalg.norm(x_axis, axis=0)
+
+    # Use the scipy.spatial.transform library Rotation to find the Rotation Vector
+    # from the X, Y, Z axis
+    r = R.from_matrix(np.vstack((x_axis, y_axis, z_axis)).T)
+    rotvec = r.as_rotvec()
+
+    # if this is the first point use it to work out the approach point 
+    if i == 0:
+      # Needs the Quaternion to publish its pose
+      orientation = r.as_quat()
+      # Needs the Rotation Vector to send to URx (UR5)
+      app_rotvec = r.as_rotvec()
+      # The approach point is set to 50mm from the first point along the Z axis
+      init_pos = z_axis * 0.05
+    rotvecs.append(rotvec)
+  # End for loop
+
+  # prepare to publish the Approach Point
+  # my_poses = PoseArray()
+  # my_pose = Pose()
+
+  # Construct the Approach point
+  approach = path[0] - init_pos
+  approach = np.hstack((approach, app_rotvec))
+
+  '''
+  my_pose.position.x = approach[0]
+  my_pose.position.y = approach[1]
+  my_pose.position.z = approach[2]
+  my_pose.orientation.x = orientation[0]
+  my_pose.orientation.y = orientation[1]
+  my_pose.orientation.z = orientation[2]
+  my_pose.orientation.w = orientation[3]
+  my_poses.poses.append(my_pose)
+  my_poses.header.frame_id = 'base'
+  my_poses.header.stamp = rospy.Time.now()
+  # print('going to publish MY_POSE.', my_pose)
+  # pub_my_pose.publish(my_poses)
+  '''
+
+  ur_poses = np.vstack((approach, np.hstack((path, np.array(rotvecs)))))
+
+  return ur_poses
+
 def detect_groove_workflow(pcd, first_round):
 
   original_pcd = pcd
@@ -473,7 +600,6 @@ def detect_groove_workflow(pcd, first_round):
     rospy.signal_shutdown("Finished shutting down")
     return
 
-    # print("\n ************* Groove ************* ")
   groove = groove.paint_uniform_color([1, 0, 0])
   reply = input("Going to cluster selected points.\nc to continue others to quit.")
   if (reply == "c"):
@@ -495,6 +621,11 @@ def detect_groove_workflow(pcd, first_round):
   else:
     rospy.signal_shutdown("Finished shutting down")
     return
+
+  ur_poses = find_orientation(generated_path)
+  publish_path_poses(ur_poses)
+
+  return(ur_poses)
 
 # Main function.
 if __name__ == "__main__":
@@ -525,6 +656,9 @@ if __name__ == "__main__":
   pub_clustered = rospy.Publisher("clustered", PointCloud2, queue_size=1)
   pub_neighbours = rospy.Publisher("neighbours", PointCloud2, queue_size=1)
   pub_path = rospy.Publisher("path", PointCloud2, queue_size=1)
+  pub_poses = rospy.Publisher('poses', PoseArray, queue_size=1)
+  # pub_my_pose = rospy.Publisher("my_pose", PoseArray, queue_size=1)
+
 
   print("\n ************* Start *************")
 
@@ -538,7 +672,7 @@ if __name__ == "__main__":
                                       frame_id="d435_depth_optical_frame")
       pub_captured.publish(rviz_cloud)
 
-      detect_groove_workflow(received_open3d_cloud, first_round)
+      ur_poses = detect_groove_workflow(received_open3d_cloud, first_round)
 
       first_round = False
 

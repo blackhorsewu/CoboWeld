@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Status1
         - /MotionPlanning1/Scene Robot1
+        - /PoseArray1/Status1
       Splitter Ratio: 0.41448691487312317
     Tree Height: 338
   - Class: rviz/Selection
@@ -381,6 +382,7 @@ Visualization Manager:
       Unreliable: false
       Value: false
       Visibility:
+        "": true
         Captured: true
         Clustered: true
         Grid: true
@@ -560,6 +562,23 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
+    - Alpha: 1
+      Arrow Length: 0.10000000149011612
+      Axes Length: 0.30000001192092896
+      Axes Radius: 0.009999999776482582
+      Class: rviz/PoseArray
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.019999999552965164
+      Head Radius: 0.009999999776482582
+      Name: PoseArray
+      Queue Size: 10
+      Shaft Length: 0.029999999329447746
+      Shaft Radius: 0.004999999888241291
+      Shape: Arrow (3D)
+      Topic: /poses
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -588,7 +607,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.5987484455108643
+      Distance: 1.6369141340255737
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -596,17 +615,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.6776320338249207
-        Y: 0.06852002441883087
-        Z: 0.2765772342681885
+        X: 0.5692238807678223
+        Y: -0.06813842803239822
+        Z: 0.28044819831848145
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6147968173027039
+      Pitch: 0.43979671597480774
       Target Frame: <Fixed Frame>
-      Yaw: 2.4552931785583496
+      Yaw: 2.620290994644165
     Saved: ~
 Window Geometry:
   Camera:
