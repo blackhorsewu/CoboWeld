@@ -586,7 +586,7 @@ def uplift_z(ur_poses):
         new_ur_poses.append(urpose)
     return new_ur_poses
 
-def detect_groove_workflow(pcd, transfromation_end_to_base, detect_feature="asymmetry" , show_groove=True, publish=True, save_data=False):
+def detect_groove_workflow(pcd, transformation_end_to_base, detect_feature="asymmetry" , show_groove=True, publish=True, save_data=False):
 
      # 2.downsample of point cloud
 
