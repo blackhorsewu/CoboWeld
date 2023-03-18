@@ -423,7 +423,7 @@ def publish_path_poses(poses):
 # After a welding path is generated, it is necessary to find the orientation of the 
 # welding torch before a pose for each point can be sent to the robot for execution.
 # groove is the detected groove with respect to the camera frame.
-def find_orientation(groove): 
+def find_orientation(groove, tcp_pose): 
 
   path = transform_cam_wrt_base(groove)
   path = np.asarray(path.points)
@@ -441,10 +441,12 @@ def find_orientation(groove):
     else:
       diff_x = path[i + 1] - path[i]
     # use the horizontal line as the Y-axis
-    y_axis = np.array([-1.0, 0.0, 0.0]) # the negative Y axis World
+    # *** remember, the groove, as it is now, is still in the camera frame
+    # therefore the horizontal line is the camera's X-axis
+    y_axis = np.array([1.0, 0.0, 0.0]) # the positive X-axis of the camera
     y_axis = y_axis/np.linalg.norm(y_axis, axis=0) # normalize it
     # The diff_x cross the Y-axis (the horizontal line) gives the Z-axis
-    # pointing into the tube
+    # pointing into the workpiece (the tube)
     z_axis = np.cross(diff_x, y_axis)
     z_axis = z_axis/np.linalg.norm(z_axis, axis=0) # normalize it
     # The Y-axis cross the Z-axis gives the X-axis
@@ -475,7 +477,7 @@ def find_orientation(groove):
 
   return ur_poses
 
-def detect_groove_workflow(pcd, first_round):
+def detect_groove_workflow(pcd, tcp_pose, first_round):
 
   original_pcd = pcd
 
@@ -605,7 +607,7 @@ def detect_groove_workflow(pcd, first_round):
     rospy.signal_shutdown("Finished shutting down")
     return
 
-  ur_poses = find_orientation(generated_path)
+  ur_poses = find_orientation(generated_path, tcp_pose)
   publish_path_poses(ur_poses)
 
   return(ur_poses)
@@ -656,7 +658,7 @@ if __name__ == "__main__":
       pub_captured.publish(rviz_cloud)
 
       tcp_pose = robot.get_pose()
-      ur_poses = detect_groove_workflow(received_open3d_cloud, first_round)
+      ur_poses = detect_groove_workflow(received_open3d_cloud, tcp_pose, first_round)
 
       first_round = False
 
