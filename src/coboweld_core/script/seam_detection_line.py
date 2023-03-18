@@ -649,8 +649,8 @@ def detect_groove_workflow(pcd, transfromation_end_to_base, detect_feature="asym
     # np.asarray(pcd.colors)[index[0],:] = [1,0,0]
     # print pcd 
     # print groove
-    pcd = transform_cam_wrt_base(pcd, transfromation_end_to_base)
-    groove = transform_cam_wrt_base(groove, transfromation_end_to_base)
+    pcd = transform_cam_wrt_base(pcd, transformation_end_to_base)
+    groove = transform_cam_wrt_base(groove, transformation_end_to_base)
 
     trajectory = generate_trajectory(pcd, groove)
 

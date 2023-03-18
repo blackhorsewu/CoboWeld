@@ -100,7 +100,7 @@ def callback_roscloud(ros_cloud):
 
     received_ros_cloud = ros_cloud
 
-def transform_cam_wrt_base(pcd, T_end_effector_wrt_base):
+def transform_cam_wrt_base(pcd):
 
   # Added by Victor Wu on 25 July 2022 for Realsense D435i on UR5
   # Updated on 29 July 2022. Needs calibration later.
@@ -178,7 +178,7 @@ def find_feature_value(pcd):
       # the bigger the feature value, meaning the normal of that point is more 
       # different from its neighbours
       feature_value = np.linalg.norm(
-          vector - (n_list[index, :] * np.dot(vector,n_list[index, :])))
+          vector - (n_list[index, :] * np.dot(vector, n_list[index, :])))
       feature_value_list.append(feature_value)
 
   return np.array(feature_value_list)
@@ -422,8 +422,10 @@ def publish_path_poses(poses):
 
 # After a welding path is generated, it is necessary to find the orientation of the 
 # welding torch before a pose for each point can be sent to the robot for execution.
-def find_orientation(path): # path is the detected groove with equidistance points
+# groove is the detected groove with respect to the camera frame.
+def find_orientation(groove): 
 
+  path = transform_cam_wrt_base(groove)
   path = np.asarray(path.points)
 
   # A list of all the Rotation Vectors used to specify the orientation in UR format
@@ -465,28 +467,9 @@ def find_orientation(path): # path is the detected groove with equidistance poin
     rotvecs.append(rotvec)
   # End for loop
 
-  # prepare to publish the Approach Point
-  # my_poses = PoseArray()
-  # my_pose = Pose()
-
   # Construct the Approach point
   approach = path[0] - init_pos
   approach = np.hstack((approach, app_rotvec))
-
-  '''
-  my_pose.position.x = approach[0]
-  my_pose.position.y = approach[1]
-  my_pose.position.z = approach[2]
-  my_pose.orientation.x = orientation[0]
-  my_pose.orientation.y = orientation[1]
-  my_pose.orientation.z = orientation[2]
-  my_pose.orientation.w = orientation[3]
-  my_poses.poses.append(my_pose)
-  my_poses.header.frame_id = 'base'
-  my_poses.header.stamp = rospy.Time.now()
-  # print('going to publish MY_POSE.', my_pose)
-  # pub_my_pose.publish(my_poses)
-  '''
 
   ur_poses = np.vstack((approach, np.hstack((path, np.array(rotvecs)))))
 
@@ -635,7 +618,7 @@ if __name__ == "__main__":
   # Start URx
   
   # Do not start URx when testing software
-  # robot = urx.Robot("192.168.0.103")
+  robot = urx.Robot('192.168.0.103')
 
   # Must have __init__(self) function for a class, similar to a C++ class constructor.
   global received_ros_cloud, delete_percentage
@@ -672,6 +655,7 @@ if __name__ == "__main__":
                                       frame_id="d435_depth_optical_frame")
       pub_captured.publish(rviz_cloud)
 
+      tcp_pose = robot.get_pose()
       ur_poses = detect_groove_workflow(received_open3d_cloud, first_round)
 
       first_round = False
