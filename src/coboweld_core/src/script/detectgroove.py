@@ -51,6 +51,7 @@ import sys
 
 import numpy as np
 import open3d as o3d
+import copy
 import math
 
 from std_msgs.msg import Header
@@ -118,7 +119,7 @@ def transform_cam_wrt_base(pcd):
   # pcd_copy1.paint_uniform_color([0.5, 0.5, 1]) 
   # Do not change the colour, commented out by Victor Wu on 26 July 2022.
 
-  pcd_copy2 = copy.deepcopy(pcd_copy1).transform(T_end_effector_wrt_base)
+  pcd_copy2 = copy.deepcopy(pcd_copy1).transform(tcp_pose.array)
   # pcd_copy2.paint_uniform_color([1, 0, 0])
   # Do not change the colour, commented out by Victor Wu on 26 July 2022.
   # o3d.visualization.draw_geometries([pcd, pcd_copy1, pcd_copy1, pcd_copy2])
@@ -423,9 +424,9 @@ def publish_path_poses(poses):
 # After a welding path is generated, it is necessary to find the orientation of the 
 # welding torch before a pose for each point can be sent to the robot for execution.
 # groove is the detected groove with respect to the camera frame.
-def find_orientation(groove, tcp_pose): 
+def find_orientation(path): 
 
-  path = transform_cam_wrt_base(groove)
+  #path = transform_cam_wrt_base(groove)
   path = np.asarray(path.points)
 
   # A list of all the Rotation Vectors used to specify the orientation in UR format
@@ -477,7 +478,7 @@ def find_orientation(groove, tcp_pose):
 
   return ur_poses
 
-def detect_groove_workflow(pcd, tcp_pose, first_round):
+def detect_groove_workflow(pcd, first_round):
 
   original_pcd = pcd
 
@@ -607,7 +608,7 @@ def detect_groove_workflow(pcd, tcp_pose, first_round):
     rospy.signal_shutdown("Finished shutting down")
     return
 
-  ur_poses = find_orientation(generated_path, tcp_pose)
+  ur_poses = find_orientation(generated_path)
   publish_path_poses(ur_poses)
 
   return(ur_poses)
@@ -620,7 +621,7 @@ if __name__ == "__main__":
   # Start URx
   
   # Do not start URx when testing software
-  robot = urx.Robot('192.168.0.103')
+  # robot = urx.Robot('192.168.0.103')
 
   # Must have __init__(self) function for a class, similar to a C++ class constructor.
   global received_ros_cloud, delete_percentage
@@ -657,8 +658,8 @@ if __name__ == "__main__":
                                       frame_id="d435_depth_optical_frame")
       pub_captured.publish(rviz_cloud)
 
-      tcp_pose = robot.get_pose()
-      ur_poses = detect_groove_workflow(received_open3d_cloud, tcp_pose, first_round)
+      # tcp_pose = robot.get_pose()
+      ur_poses = detect_groove_workflow(received_open3d_cloud, first_round)
 
       first_round = False
 

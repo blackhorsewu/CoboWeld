@@ -6,7 +6,6 @@ Panels:
       Expanded:
         - /Status1
         - /MotionPlanning1/Scene Robot1
-        - /PoseArray1/Status1
       Splitter Ratio: 0.41448691487312317
     Tree Height: 338
   - Class: rviz/Selection
@@ -382,13 +381,13 @@ Visualization Manager:
       Unreliable: false
       Value: false
       Visibility:
-        "": true
         Captured: true
         Clustered: true
         Grid: true
         MotionPlanning: true
         Neighourhood: true
         Path: true
+        PoseArray: true
         Raw PC: true
         Selected: true
         TF: true
@@ -416,7 +415,7 @@ Visualization Manager:
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.003000000026077032
-      Style: Spheres
+      Style: Points
       Topic: /d435/depth/color/points
       Unreliable: false
       Use Fixed Frame: true
@@ -607,7 +606,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.6369141340255737
+      Distance: 0.3479514718055725
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -623,9 +622,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.43979671597480774
+      Pitch: 0.9847962260246277
       Target Frame: <Fixed Frame>
-      Yaw: 2.620290994644165
+      Yaw: 2.8752963542938232
     Saved: ~
 Window Geometry:
   Camera:
