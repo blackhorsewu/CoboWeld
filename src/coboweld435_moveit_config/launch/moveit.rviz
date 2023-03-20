@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Status1
         - /MotionPlanning1/Scene Robot1
+        - /TF1/Frames1
       Splitter Ratio: 0.41448691487312317
     Tree Height: 338
   - Class: rviz/Selection
@@ -25,7 +26,7 @@ Panels:
   - Class: rviz/Time
     Name: Time
     SyncMode: 0
-    SyncSource: Raw PC
+    SyncSource: Captured
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -361,7 +362,7 @@ Visualization Manager:
       Frames:
         All Enabled: false
       Marker Alpha: 1
-      Marker Scale: 0.20000000298023224
+      Marker Scale: 0.5
       Name: TF
       Show Arrows: false
       Show Axes: true
@@ -385,7 +386,6 @@ Visualization Manager:
         Clustered: true
         Grid: true
         MotionPlanning: true
-        Neighourhood: true
         Path: true
         PoseArray: true
         Raw PC: true
@@ -534,47 +534,19 @@ Visualization Manager:
       Use rainbow: true
       Value: true
     - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: RGB8
-      Decay Time: 0
-      Enabled: false
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Min Color: 0; 0; 0
-      Name: Neighourhood
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.009999999776482582
-      Style: Points
-      Topic: /neighbours
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: false
-    - Alpha: 1
       Arrow Length: 0.10000000149011612
-      Axes Length: 0.30000001192092896
-      Axes Radius: 0.009999999776482582
+      Axes Length: 0.009999999776482582
+      Axes Radius: 0.0010000000474974513
       Class: rviz/PoseArray
       Color: 255; 25; 0
       Enabled: true
       Head Length: 0.019999999552965164
       Head Radius: 0.009999999776482582
-      Name: PoseArray
+      Name: Path poses
       Queue Size: 10
       Shaft Length: 0.029999999329447746
       Shaft Radius: 0.004999999888241291
-      Shape: Arrow (3D)
+      Shape: Axes
       Topic: /poses
       Unreliable: false
       Value: true
@@ -606,7 +578,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 0.3479514718055725
+      Distance: 0.4037434458732605
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -614,17 +586,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.5692238807678223
-        Y: -0.06813842803239822
-        Z: 0.28044819831848145
+        X: 0.4216521680355072
+        Y: -0.03174988925457001
+        Z: 0.2862226068973541
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.9847962260246277
+      Pitch: 0.5147963166236877
       Target Frame: <Fixed Frame>
-      Yaw: 2.8752963542938232
+      Yaw: 1.4052894115447998
     Saved: ~
 Window Geometry:
   Camera:
