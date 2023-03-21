@@ -459,7 +459,6 @@ def find_orientation(path):
     # The Y-axis cross the Z-axis gives the X-axis
     x_axis = np.cross(y_axis, z_axis)
     x_axis = x_axis/np.linalg.norm(x_axis, axis=0)
-    '''
 
     # diff_x cross a vertical line gives the Y-axis
     y_axis = np.cross(diff_x, np.array([0.0, 0.0, 1.0]))
@@ -470,6 +469,18 @@ def find_orientation(path):
     # The Y-axis cross the Z-axis gives the X-axis
     x_axis = np.cross(y_axis, z_axis)
     # since both Y-axis and Z-axis are normalized therefore no need to normalize it
+    '''
+
+    # if move along the Y-axis, then it should be called diff_y
+    # diff_y cross a vertical line gives the X-axis
+    x_axis = np.cross(diff_x, np.array([0.0, 0.0, -1.0]))
+    x_axis = x_axis/np.linalg.norm(x_axis, axis=0) # normalize it
+    # The diff_y cross the X-axis gives the Z-axis
+    z_axis = np.cross(x_axis, diff_x)
+    z_axis = z_axis/np.linalg.norm(z_axis, axis=0) # normalize it
+    # The Z-axis cross the X-axis gives the Y-axis
+    y_axis = np.cross(z_axis, x_axis)
+    # since both Z-axis and X-axis are normalized therefore no need to normalize it
 
     # Use the scipy.spatial.transform library Rotation to find the Rotation Vector
     # from the X, Y, Z axis
