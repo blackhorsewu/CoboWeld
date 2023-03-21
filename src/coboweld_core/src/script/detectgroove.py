@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 '''
@@ -70,9 +70,9 @@ import urx
 
 import csv
 
-#
-# Define Parameter values
-#
+#*************************#
+# Define Parameter values #
+#*************************#
 # 1. Feature value neighbours
 feature_neighbours = 6
 # 2. Distance between cluster neighbours
@@ -90,6 +90,8 @@ my_radius = 0.012 # m or 12mm
 maxnn = 452
 # 7. Delete percentage of feature values
 percentage = 0.96
+
+use_urx = False
 
 # This is for conversion from Open3d point cloud to ROS point cloud
 # Note: Add `.ravel()` to the end of line 261 in the `open3d_ros_helper.py` before it can work
@@ -111,10 +113,15 @@ def transform_cam_wrt_base(pcd):
   #                                     [ 0.0000000,  0.0000000,  1.0000000,  0.18265],
   #                                     [ 0.0000000,  0.0000000,  0.0000000,  1.00000]] )
   # Z in translation added 0.015m because base is 0.015m above table
-  T_cam_wrt_end_effector = np.array( [[ 1.0000000,  0.0000000,  0.0000000, -0.01750],
-                                      [ 0.0000000,  1.0000000,  0.0000000, -0.03800],
-                                      [ 0.0000000,  0.0000000,  1.0000000,  0.18400],
-                                      [ 0.0000000,  0.0000000,  0.0000000,  1.00000]] )
+  # T_cam_wrt_end_effector = np.array( [[ 1.0000000,  0.0000000,  0.0000000, -0.01750],
+  #                                     [ 0.0000000,  1.0000000,  0.0000000, -0.03800],
+  #                                     [ 0.0000000,  0.0000000,  1.0000000,  0.18400],
+  #                                     [ 0.0000000,  0.0000000,  0.0000000,  1.00000]] )
+  # Updated on 21 March 2023 by Victor Wu
+  T_cam_wrt_end_effector = np.array([[1.000000, 0.000000, 0.000000, -0.010600], 
+                                     [0.000000, 1.000000, 0.000000, -0.040000], 
+                                     [0.000000, 0.000000, 1.000000,  0.204350], 
+                                     [0.000000, 0.000000, 0.000000,  1.000000]])
 
   pcd_copy1 = copy.deepcopy(pcd).transform(T_cam_wrt_end_effector)
   # pcd_copy1.paint_uniform_color([0.5, 0.5, 1]) 
@@ -370,10 +377,11 @@ def generate_path(groove):
        (tck, u), fp, ier, msg = interpolate.splprep([x, y, z], s=float("inf"), full_output=1)
     except TypeError:
       print("\n ************* End ************* ")
-      robot.stop()
-      # close the communication, otherwise python will not shutdown properly
-      robot.close()
-      print('UR5 closed')
+      if use_urx:
+        robot.stop()
+        # close the communication, otherwise python will not shutdown properly
+        robot.close()
+        print('UR5 closed')
       rospy.signal_shutdown("Finished shutting down")
 
     u_fine = np.linspace(0, 1, x.size*2)
@@ -383,10 +391,11 @@ def generate_path(groove):
       x_fine, y_fine, z_fine = interpolate.splev(u_fine, tck)
     except TypeError:
       print("\n ************* End ************* ")
-      robot.stop()
-      # close the communication, otherwise python will not shutdown properly
-      robot.close()
-      print('UR5 closed')
+      if use_urx:
+        robot.stop()
+        # close the communication, otherwise python will not shutdown properly
+        robot.close()
+        print('UR5 closed')
       rospy.signal_shutdown("Finished shutting down")
 
     sorted_points = np.vstack((x_fine, y_fine, z_fine)).T
@@ -647,11 +656,19 @@ def detect_groove_workflow(pcd, first_round):
 
 # Main function.
 if __name__ == "__main__":
+
+  global received_ros_cloud
+
+  if len(sys.argv) > 1:
+    if sys.argv[1] == 'execute':
+      use_urx = True
+    else:
+      use_urx = False
+
   # Initialize the node and name it.
   rospy.init_node('coboweld_core', anonymous=True)
 
   # Must have __init__(self) function for a class, similar to a C++ class constructor.
-  global received_ros_cloud, delete_percentage
 
   # delete_percentage = 0.95 ORIGINAL VALUE
   delete_percentage = percentage
@@ -667,27 +684,28 @@ if __name__ == "__main__":
   pub_captured = rospy.Publisher("captured", PointCloud2, queue_size=1)
   pub_selected = rospy.Publisher("selected", PointCloud2, queue_size=1)
   pub_clustered = rospy.Publisher("clustered", PointCloud2, queue_size=1)
-  pub_neighbours = rospy.Publisher("neighbours", PointCloud2, queue_size=1)
   pub_path = rospy.Publisher("path", PointCloud2, queue_size=1)
   pub_poses = rospy.Publisher('poses', PoseArray, queue_size=1)
-  # pub_my_pose = rospy.Publisher("my_pose", PoseArray, queue_size=1)
+  # pub_neighbours = rospy.Publisher("neighbours", PointCloud2, queue_size=1)
 
 
   print("\n ************* Start *************")
 
-  # Start URx
+  # Start URx only when use_urx is True
   
   # Do not start URx when testing software
-  robot = urx.Robot('192.168.0.103')
+  
+  if use_urx:
+    robot = urx.Robot('192.168.0.103')
 
-  home1j = [0.0001, -1.1454, -2.7596, 0.7290, 0.0000, 0.0000]
-  startG1j = [0.2173, -1.8616, -0.2579, -2.6004, 1.5741, 0.2147]
+    home1j = [0.0001, -1.1454, -2.7596, 0.7290, 0.0000, 0.0000]
+    startG1j = [0.2173, -1.8616, -0.2579, -2.6004, 1.5741, 0.2147]
 
-  robot.movej(home1j, 0.4, 0.4, wait=True)
-  time.sleep(0.2)
+    robot.movej(home1j, 0.4, 0.4, wait=True)
+    time.sleep(0.2)
 
-  robot.movej(startG1j, 0.4, 0.4, wait=True)
-  time.sleep(0.2)
+    robot.movej(startG1j, 0.4, 0.4, wait=True)
+    time.sleep(0.2)
 
   first_round = True
   while not rospy.is_shutdown():
@@ -699,26 +717,30 @@ if __name__ == "__main__":
                                       frame_id="d435_depth_optical_frame")
       pub_captured.publish(rviz_cloud)
 
-      tcp_pose = robot.get_pose()
+      if use_urx:
+        tcp_pose = robot.get_pose()
       ur_poses = detect_groove_workflow(received_open3d_cloud, first_round)
 
-      reply = input('Do you want to move to the Approaching Point? Y for yes: ')
-      if (reply == "y"):
-        torch_tcp = [0.0, -0.111, 0.366, 0.0, 0.0, 0.0]
-        robot.set_tcp(torch_tcp)
-        time.sleep(0.2)
+      if use_urx:
+        reply = input('Do you want to move to the Approaching Point? Y for yes: ')
+        if (reply == "y"):
+          torch_tcp = [0.0, -0.105, 0.365, 0.0, 0.0, 0.0]
+          robot.set_tcp(torch_tcp)
+          time.sleep(0.2)
 
-        robot.movel(ur_poses[0], acc=0.1, vel=0.1, wait=True)
+          robot.movel(ur_poses[0], acc=0.1, vel=0.1, wait=True)
 
-        input('\nPress any to continue')
-        robot.movel(ur_poses[1], acc=0.1, vel=0.1, wait=True)
+          input('\nPress any to continue')
+          robot.movel(ur_poses[1], acc=0.1, vel=0.1, wait=True)
 
       first_round = False
 
   print("\n ************* End ************* ")
-  robot.stop()
-  # close the communication, otherwise python will not shutdown properly
-  robot.close()
-  print('UR5 closed')
+
+  if use_urx:
+    robot.stop()
+    # close the communication, otherwise python will not shutdown properly
+    robot.close()
+    print('UR5 closed')
   rospy.signal_shutdown("Finished shutting down")
 
