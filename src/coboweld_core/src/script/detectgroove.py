@@ -91,7 +91,7 @@ maxnn = 452
 # 7. Delete percentage of feature values
 percentage = 0.96
 
-use_urx = False
+execute = False
 
 # This is for conversion from Open3d point cloud to ROS point cloud
 # Note: Add `.ravel()` to the end of line 261 in the `open3d_ros_helper.py` before it can work
@@ -119,8 +119,11 @@ def transform_cam_wrt_base(pcd):
   #                                     [ 0.0000000,  0.0000000,  0.0000000,  1.00000]] )
   # Updated on 21 March 2023 by Victor Wu
   T_cam_wrt_end_effector = np.array([[1.000000, 0.000000, 0.000000, -0.010600], 
-                                     [0.000000, 1.000000, 0.000000, -0.040000], 
-                                     [0.000000, 0.000000, 1.000000,  0.204350], 
+                                     #[1.000000, 0.000000, 0.000000, -0.017600],
+                                     [0.000000, 1.000000, 0.000000, -0.040000],
+                                     #[0.000000, 1.000000, 0.000000, -0.1050], 
+                                     # [0.000000, 0.000000, 1.000000,  0.204350],
+                                     [0.000000, 0.000000, 1.000000,  0.170], 
                                      [0.000000, 0.000000, 0.000000,  1.000000]])
 
   pcd_copy1 = copy.deepcopy(pcd).transform(T_cam_wrt_end_effector)
@@ -377,11 +380,10 @@ def generate_path(groove):
        (tck, u), fp, ier, msg = interpolate.splprep([x, y, z], s=float("inf"), full_output=1)
     except TypeError:
       print("\n ************* End ************* ")
-      if use_urx:
-        robot.stop()
-        # close the communication, otherwise python will not shutdown properly
-        robot.close()
-        print('UR5 closed')
+      robot.stop()
+      # close the communication, otherwise python will not shutdown properly
+      robot.close()
+      print('UR5 closed')
       rospy.signal_shutdown("Finished shutting down")
 
     u_fine = np.linspace(0, 1, x.size*2)
@@ -391,11 +393,10 @@ def generate_path(groove):
       x_fine, y_fine, z_fine = interpolate.splev(u_fine, tck)
     except TypeError:
       print("\n ************* End ************* ")
-      if use_urx:
-        robot.stop()
-        # close the communication, otherwise python will not shutdown properly
-        robot.close()
-        print('UR5 closed')
+      robot.stop()
+      # close the communication, otherwise python will not shutdown properly
+      robot.close()
+      print('UR5 closed')
       rospy.signal_shutdown("Finished shutting down")
 
     sorted_points = np.vstack((x_fine, y_fine, z_fine)).T
@@ -455,11 +456,10 @@ def find_orientation(path):
     else:
       diff_x = path[i + 1] - path[i]
 
-    '''
     # use the horizontal line as the Y-axis
     # *** remember, the groove, as it is now, is still in the camera frame
     # therefore the horizontal line is the camera's X-axis
-    y_axis = np.array([-1.0, 0.0, 0.0]) # the negative X-axis of the camera
+    y_axis = np.array([0.0, 0.0, -1.0]) # the negative X-axis of the camera
     y_axis = y_axis/np.linalg.norm(y_axis, axis=0) # normalize it
     # The diff_x cross the Y-axis (the horizontal line) gives the Z-axis
     # pointing into the workpiece (the tube)
@@ -469,6 +469,7 @@ def find_orientation(path):
     x_axis = np.cross(y_axis, z_axis)
     x_axis = x_axis/np.linalg.norm(x_axis, axis=0)
 
+    '''
     # diff_x cross a vertical line gives the Y-axis
     y_axis = np.cross(diff_x, np.array([0.0, 0.0, 1.0]))
     y_axis = y_axis/np.linalg.norm(y_axis, axis=0) # normalize it
@@ -478,7 +479,6 @@ def find_orientation(path):
     # The Y-axis cross the Z-axis gives the X-axis
     x_axis = np.cross(y_axis, z_axis)
     # since both Y-axis and Z-axis are normalized therefore no need to normalize it
-    '''
 
     # if move along the Y-axis, then it should be called diff_y
     # diff_y cross a vertical line gives the X-axis
@@ -490,6 +490,7 @@ def find_orientation(path):
     # The Z-axis cross the X-axis gives the Y-axis
     y_axis = np.cross(z_axis, x_axis)
     # since both Z-axis and X-axis are normalized therefore no need to normalize it
+    '''
 
     # Use the scipy.spatial.transform library Rotation to find the Rotation Vector
     # from the X, Y, Z axis
@@ -530,8 +531,8 @@ def detect_groove_workflow(pcd, first_round):
       # 50mm x 50mm plane with 0.5m depth
       #min_bound = (-0.015, -0.025, 0.2), 
       #max_bound = (0.035, 0.025, 0.5)  
-      min_bound = (-0.062, -0.10, 0.25), 
-      max_bound = (0.028, 0.10, 0.35)  
+      min_bound = (-1.0, -0.10, 0.25), 
+      max_bound = (0.5, 0.10, 0.4)  
   )
 
   ## b. Define voxel size
@@ -603,8 +604,8 @@ def detect_groove_workflow(pcd, first_round):
   # define an inner bounding box for border removing
   # 5mm less on each side
   ibbox = o3d.geometry.AxisAlignedBoundingBox(
-     min_bound = ( -0.06, -0.094, 0.255), 
-     max_bound = ( 0.024, 0.094, 0.345)  
+     min_bound = ( -1.0, -0.094, 0.255), 
+     max_bound = ( 0.54, 0.094, 0.39)  
   )
 
   pcd_selected = pcd_selected.crop(ibbox)
@@ -624,7 +625,7 @@ def detect_groove_workflow(pcd, first_round):
     return
 
   groove = groove.paint_uniform_color([1, 0, 0])
-  groove = transform_cam_wrt_base(groove)
+  groove = transform_cam_wrt_base(groove) # *************************************************
   reply = input("Going to cluster selected points.\nc to continue others to quit.")
   if (reply == "c"):
     # rviz_cloud = orh.o3dpc_to_rospc(groove, frame_id="d435_depth_optical_frame")
@@ -661,9 +662,9 @@ if __name__ == "__main__":
 
   if len(sys.argv) > 1:
     if sys.argv[1] == 'execute':
-      use_urx = True
+      execute = True
     else:
-      use_urx = False
+      execute = False
 
   # Initialize the node and name it.
   rospy.init_node('coboweld_core', anonymous=True)
@@ -691,21 +692,22 @@ if __name__ == "__main__":
 
   print("\n ************* Start *************")
 
-  # Start URx only when use_urx is True
+  # Start URx only when execute is True
   
   # Do not start URx when testing software
   
-  if use_urx:
-    robot = urx.Robot('192.168.0.103')
+  robot = urx.Robot('192.168.0.103')
 
-    home1j = [0.0001, -1.1454, -2.7596, 0.7290, 0.0000, 0.0000]
-    startG1j = [0.2173, -1.8616, -0.2579, -2.6004, 1.5741, 0.2147]
+  home1j = [0.0001, -1.1454, -2.7596, 0.7290, 0.0000, 0.0000]
+  startG1j = [0.2173, -1.8616, -0.2579, -2.6004, 1.5741, 0.2147]
+  startchsj = [0.6792, -0.4243, -2.5662, -0.1751, 0.9010, 0.0188]
 
-    robot.movej(home1j, 0.4, 0.4, wait=True)
-    time.sleep(0.2)
+  robot.movej(home1j, 0.4, 0.4, wait=True)
+  time.sleep(0.2)
 
-    robot.movej(startG1j, 0.4, 0.4, wait=True)
-    time.sleep(0.2)
+  robot.movej(startchsj, 0.4, 0.4, wait=True)
+  robot.set_tcp((0, 0, 0, 0, 0, 0))
+  time.sleep(0.3)
 
   first_round = True
   while not rospy.is_shutdown():
@@ -717,18 +719,17 @@ if __name__ == "__main__":
                                       frame_id="d435_depth_optical_frame")
       pub_captured.publish(rviz_cloud)
 
-      if use_urx:
-        tcp_pose = robot.get_pose()
+      tcp_pose = robot.get_pose()
       ur_poses = detect_groove_workflow(received_open3d_cloud, first_round)
 
-      if use_urx:
+      if execute:
         reply = input('Do you want to move to the Approaching Point? Y for yes: ')
         if (reply == "y"):
           torch_tcp = [0.0, -0.105, 0.365, 0.0, 0.0, 0.0]
           robot.set_tcp(torch_tcp)
           time.sleep(0.2)
 
-          robot.movel(ur_poses[0], acc=0.1, vel=0.1, wait=True)
+          robot.movej(ur_poses[0], acc=0.1, vel=0.1, wait=True)
 
           input('\nPress any to continue')
           robot.movel(ur_poses[1], acc=0.1, vel=0.1, wait=True)
@@ -737,10 +738,9 @@ if __name__ == "__main__":
 
   print("\n ************* End ************* ")
 
-  if use_urx:
-    robot.stop()
-    # close the communication, otherwise python will not shutdown properly
-    robot.close()
-    print('UR5 closed')
+  robot.stop()
+  # close the communication, otherwise python will not shutdown properly
+  robot.close()
+  print('UR5 closed')
   rospy.signal_shutdown("Finished shutting down")
 

@@ -26,7 +26,7 @@ Panels:
   - Class: rviz/Time
     Name: Time
     SyncMode: 0
-    SyncSource: Captured
+    SyncSource: Raw PC
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -387,7 +387,7 @@ Visualization Manager:
         Grid: true
         MotionPlanning: true
         Path: true
-        PoseArray: true
+        Path poses: true
         Raw PC: true
         Selected: true
         TF: true
@@ -470,7 +470,7 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 7
-      Size (m): 0.0020000000949949026
+      Size (m): 0.0024999999441206455
       Style: Spheres
       Topic: /selected
       Unreliable: false
@@ -526,7 +526,7 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 8
-      Size (m): 0.004999999888241291
+      Size (m): 0.004000000189989805
       Style: Spheres
       Topic: /path
       Unreliable: false
@@ -578,7 +578,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 0.4037434458732605
+      Distance: 1.6791759729385376
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -586,17 +586,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.4216521680355072
-        Y: -0.03174988925457001
-        Z: 0.2862226068973541
+        X: 0.46257373690605164
+        Y: -0.08641082048416138
+        Z: 0.4888850152492523
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5147963166236877
+      Pitch: 0.3697963356971741
       Target Frame: <Fixed Frame>
-      Yaw: 1.4052894115447998
+      Yaw: 1.9952901601791382
     Saved: ~
 Window Geometry:
   Camera:
