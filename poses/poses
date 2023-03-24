@@ -27,3 +27,6 @@ startG1j = [0.2173, -1.8616, -0.2579, -2.6004, 1.5741, 0.2147]
 
 # Start position for CHS 
 startchsj = [0.6792, -0.4243, -2.5662, -0.1751, 0.9010, 0.0188]
+
+# Start position for a better CHS position
+startchs1j = [-0.4060, -1.4229, -2.2255, 0.5201, 1.0502, -0.0131]

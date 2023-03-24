@@ -76,7 +76,7 @@ import csv
 # 1. Feature value neighbours
 feature_neighbours = 6
 # 2. Distance between cluster neighbours
-cluster_neighbour_distance = 0.005 # m or 10mm
+cluster_neighbour_distance = 0.008 # m or 8mm
 # 3. Minimum cluster members
 min_cluster_memb = 6
 # 4. Point cloud thickness in thin_line
@@ -108,24 +108,27 @@ def transform_cam_wrt_base(pcd):
 
   # Added by Victor Wu on 25 July 2022 for Realsense D435i on UR5
   # Updated on 29 July 2022. Needs calibration later.
-  # T_cam_wrt_end_effector = np.array( [[ 1.0000000,  0.0000000,  0.0000000, -0.01270],
-  #                                     [ 0.0000000,  1.0000000,  0.0000000, -0.04000],
-  #                                     [ 0.0000000,  0.0000000,  1.0000000,  0.18265],
-  #                                     [ 0.0000000,  0.0000000,  0.0000000,  1.00000]] )
+  '''
+  T_cam_wrt_end_effector = np.array( [[ 1.0000000,  0.0000000,  0.0000000, -0.01270],
+                                      [ 0.0000000,  1.0000000,  0.0000000, -0.04000],
+                                      [ 0.0000000,  0.0000000,  1.0000000,  0.18265],
+                                      [ 0.0000000,  0.0000000,  0.0000000,  1.00000]] )
   # Z in translation added 0.015m because base is 0.015m above table
-  # T_cam_wrt_end_effector = np.array( [[ 1.0000000,  0.0000000,  0.0000000, -0.01750],
-  #                                     [ 0.0000000,  1.0000000,  0.0000000, -0.03800],
-  #                                     [ 0.0000000,  0.0000000,  1.0000000,  0.18400],
-  #                                     [ 0.0000000,  0.0000000,  0.0000000,  1.00000]] )
+  T_cam_wrt_end_effector = np.array( [[ 1.0000000,  0.0000000,  0.0000000, -0.01750],
+                                      [ 0.0000000,  1.0000000,  0.0000000, -0.03800],
+                                      [ 0.0000000,  0.0000000,  1.0000000,  0.18400],
+                                      [ 0.0000000,  0.0000000,  0.0000000,  1.00000]] )
+  
   # Updated on 21 March 2023 by Victor Wu
+  '''
   T_cam_wrt_end_effector = np.array([[1.000000, 0.000000, 0.000000, -0.010600], 
                                      #[1.000000, 0.000000, 0.000000, -0.017600],
                                      [0.000000, 1.000000, 0.000000, -0.040000],
                                      #[0.000000, 1.000000, 0.000000, -0.1050], 
-                                     # [0.000000, 0.000000, 1.000000,  0.204350],
-                                     [0.000000, 0.000000, 1.000000,  0.170], 
+                                     [0.000000, 0.000000, 1.000000,  0.213350],
+                                     #[0.000000, 0.000000, 1.000000,  0.170], 
                                      [0.000000, 0.000000, 0.000000,  1.000000]])
-
+  
   pcd_copy1 = copy.deepcopy(pcd).transform(T_cam_wrt_end_effector)
   # pcd_copy1.paint_uniform_color([0.5, 0.5, 1]) 
   # Do not change the colour, commented out by Victor Wu on 26 July 2022.
@@ -505,12 +508,29 @@ def find_orientation(path):
       app_rotvec = r.as_rotvec()
       # The approach point is set to 50mm from the first point along the Z axis
       init_pos = z_axis * 0.05
+
+    '''
+    # if this is the last point use it to work out the leaving point 
+    if i == (path.shape[0]-1):
+      # Needs the Quaternion to publish its pose
+      orientation = r.as_quat()
+      # Needs the Rotation Vector to send to URx (UR5)
+      app_rotvec = r.as_rotvec()
+      # The approach point is set to 50mm from the first point along the Z axis
+      last_pos = z_axis * 0.05
+    '''
     rotvecs.append(rotvec)
   # End for loop
 
   # Construct the Approach point
   approach = path[0] - init_pos
   approach = np.hstack((approach, app_rotvec))
+
+  '''
+  # Construct the Leaving point
+  leaving = path[-1] - last_pos
+  leaving = np.hstack((leaving, app_rotvec))
+  '''
 
   ur_poses = np.vstack((approach, np.hstack((path, np.array(rotvecs)))))
 
@@ -532,7 +552,7 @@ def detect_groove_workflow(pcd, first_round):
       #min_bound = (-0.015, -0.025, 0.2), 
       #max_bound = (0.035, 0.025, 0.5)  
       min_bound = (-1.0, -0.10, 0.25), 
-      max_bound = (0.5, 0.10, 0.4)  
+      max_bound = (0.5, 0.10, 0.35)  
   )
 
   ## b. Define voxel size
@@ -556,6 +576,8 @@ def detect_groove_workflow(pcd, first_round):
   print("Point cloud cropped.")
   rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
   pub_captured.publish(rviz_cloud)
+  
+  '''
   if first_round == True:
     print("Do you want to save the new point cloud?")
     reply = input("Y for yes: ")
@@ -564,6 +586,7 @@ def detect_groove_workflow(pcd, first_round):
       o3d.io.write_point_cloud(filename, pcd)
     # else do nothing
   # else do nothing
+  '''
 
   ## c. Count the number of points afterwards
   pc_number = np.asarray(pcd.points).shape[0]
@@ -605,7 +628,7 @@ def detect_groove_workflow(pcd, first_round):
   # 5mm less on each side
   ibbox = o3d.geometry.AxisAlignedBoundingBox(
      min_bound = ( -1.0, -0.094, 0.255), 
-     max_bound = ( 0.54, 0.094, 0.39)  
+     max_bound = ( 0.54, 0.094, 0.34)  
   )
 
   pcd_selected = pcd_selected.crop(ibbox)
@@ -701,11 +724,12 @@ if __name__ == "__main__":
   home1j = [0.0001, -1.1454, -2.7596, 0.7290, 0.0000, 0.0000]
   startG1j = [0.2173, -1.8616, -0.2579, -2.6004, 1.5741, 0.2147]
   startchsj = [0.6792, -0.4243, -2.5662, -0.1751, 0.9010, 0.0188]
+  startchs1j = [-0.4060, -1.4229, -2.2255, 0.5201, 1.0502, -0.0131]
 
   robot.movej(home1j, 0.4, 0.4, wait=True)
   time.sleep(0.2)
 
-  robot.movej(startchsj, 0.4, 0.4, wait=True)
+  robot.movej(startchs1j, 0.4, 0.4, wait=True)
   robot.set_tcp((0, 0, 0, 0, 0, 0))
   time.sleep(0.3)
 
@@ -725,16 +749,31 @@ if __name__ == "__main__":
       if execute:
         reply = input('Do you want to move to the Approaching Point? Y for yes: ')
         if (reply == "y"):
-          torch_tcp = [0.0, -0.105, 0.365, 0.0, 0.0, 0.0]
+          # torch_tcp = [0.0, -0.105, 0.365, 0.0, 0.0, 0.0]
+          torch_tcp = [0.0, -0.111, 0.366, 0.0, 0.0, 0.0]
           robot.set_tcp(torch_tcp)
+          # pause is essential for tcp to take effect, min time is 0.1s
           time.sleep(0.2)
 
-          robot.movej(ur_poses[0], acc=0.1, vel=0.1, wait=True)
+          # Move to the Approach point
+          robot.movel(ur_poses[0], acc=0.1, vel=0.1, wait=True)
 
           input('\nPress any to continue')
-          robot.movel(ur_poses[1], acc=0.1, vel=0.1, wait=True)
+          robot.movel(ur_poses[1], acc =0.1, vel=0.1, wait=True)
+          time.sleep(0.2)
+          robot.set_digital_out(0, True)
+          time.sleep(0.2)
+          robot.movels(ur_poses[1:], acc=0.1, vel=0.1, wait=True)
+          time.sleep(0.2)
+          robot.set_digital_out(0, False)
 
-      first_round = False
+          robot.movej(home1j, 0.4, 0.4, wait=True)
+    
+    reply = input('Do you want to do it again? :')
+    if (reply == 'n'):
+      break
+
+      #first_round = False
 
   print("\n ************* End ************* ")
 
