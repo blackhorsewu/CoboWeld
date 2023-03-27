@@ -505,34 +505,36 @@ def find_orientation(path):
       # Needs the Quaternion to publish its pose
       orientation = r.as_quat()
       # Needs the Rotation Vector to send to URx (UR5)
-      app_rotvec = r.as_rotvec()
+      first_rotvec = r.as_rotvec()
       # The approach point is set to 50mm from the first point along the Z axis
       init_pos = z_axis * 0.05
 
-    '''
     # if this is the last point use it to work out the leaving point 
     if i == (path.shape[0]-1):
       # Needs the Quaternion to publish its pose
       orientation = r.as_quat()
       # Needs the Rotation Vector to send to URx (UR5)
-      app_rotvec = r.as_rotvec()
+      last_rotvec = r.as_rotvec()
       # The approach point is set to 50mm from the first point along the Z axis
       last_pos = z_axis * 0.05
-    '''
+
     rotvecs.append(rotvec)
   # End for loop
 
   # Construct the Approach point
+  # path[0] is the position of the first point
+  # path[0] - init_pos takes the approach from first point by init_pos in Z direction
   approach = path[0] - init_pos
-  approach = np.hstack((approach, app_rotvec))
+  approach = np.hstack((approach, first_rotvec))
 
-  '''
   # Construct the Leaving point
+  # path[-1] is the last point
+  # path[-1] - last_pos takes the leaving from last point by last_pos in Z direction
   leaving = path[-1] - last_pos
-  leaving = np.hstack((leaving, app_rotvec))
-  '''
+  leaving = np.hstack((leaving, last_rotvec))
 
   ur_poses = np.vstack((approach, np.hstack((path, np.array(rotvecs)))))
+  ur_poses = np.vstack((ur_poses, leaving))
 
   return ur_poses
 
