@@ -123,9 +123,9 @@ def transform_cam_wrt_base(pcd):
   '''
   T_cam_wrt_end_effector = np.array([[1.000000, 0.000000, 0.000000, -0.010600], 
                                      #[1.000000, 0.000000, 0.000000, -0.017600],
-                                     [0.000000, 1.000000, 0.000000, -0.040000],
+                                     [0.000000, 1.000000, 0.000000, -0.03000],
                                      #[0.000000, 1.000000, 0.000000, -0.1050], 
-                                     [0.000000, 0.000000, 1.000000,  0.213350],
+                                     [0.000000, 0.000000, 1.000000,  0.20400],
                                      #[0.000000, 0.000000, 1.000000,  0.170], 
                                      [0.000000, 0.000000, 0.000000,  1.000000]])
   
@@ -533,8 +533,8 @@ def find_orientation(path):
   leaving = path[-1] - last_pos
   leaving = np.hstack((leaving, last_rotvec))
 
-  ur_poses = np.vstack((approach, np.hstack((path, np.array(rotvecs)))))
-  ur_poses = np.vstack((ur_poses, leaving))
+  # Put approach, path, and leaving all in a tuple and then stack them vertically.
+  ur_poses = np.vstack((approach, np.hstack((path, np.array(rotvecs))), leaving))
 
   return ur_poses
 
@@ -752,7 +752,7 @@ if __name__ == "__main__":
         reply = input('Do you want to move to the Approaching Point? Y for yes: ')
         if (reply == "y"):
           # torch_tcp = [0.0, -0.105, 0.365, 0.0, 0.0, 0.0]
-          torch_tcp = [0.0, -0.111, 0.366, 0.0, 0.0, 0.0]
+          torch_tcp = [0.0, -0.105, 0.377, 0.0, 0.0, 0.0]
           robot.set_tcp(torch_tcp)
           # pause is essential for tcp to take effect, min time is 0.1s
           time.sleep(0.2)
@@ -762,12 +762,13 @@ if __name__ == "__main__":
 
           input('\nPress any to continue')
           robot.movel(ur_poses[1], acc =0.1, vel=0.1, wait=True)
-          time.sleep(0.2)
+          time.sleep(1.0)
           robot.set_digital_out(0, True)
-          time.sleep(0.2)
-          robot.movels(ur_poses[1:], acc=0.1, vel=0.1, wait=True)
-          time.sleep(0.2)
+          time.sleep(1.0)
+          robot.movels(ur_poses[1:-2], acc=0.1, vel=0.1, wait=True)
+          time.sleep(1.0)
           robot.set_digital_out(0, False)
+          robot.movel(ur_poses[-1], acc=0.1, vel=0.1, wait=True)
 
           robot.movej(home1j, 0.4, 0.4, wait=True)
     

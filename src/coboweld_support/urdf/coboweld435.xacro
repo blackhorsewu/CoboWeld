@@ -51,8 +51,9 @@
 <!--
     <origin xyz="0.00395 -0.10284 0.37548" rpy="3.1366625 -0.00247520 1.3734586"/>
     <origin xyz="0 -0.111 0.360" rpy="0 0 ${pi}"/>
--->
     <origin xyz="0.00395 -0.11084 0.36548" rpy="0 0 ${pi}"/>
+-->
+    <origin xyz="0.0 -0.105 0.365" rpy="0 0 ${pi}"/>
     <parent link="wrist_3_link"/>
     <child link="torch"/>
   </joint>
@@ -85,7 +86,7 @@
     <!--
     <origin xyz="0.0 -0.0225 0.19185" rpy="0 ${-pi/2} ${pi/2}"/>
     -->
-    <origin xyz="-0.0106 -0.040 0.20435" rpy="0 ${-pi/2} ${pi/2}"/>
+    <origin xyz="0.0 -0.0225 0.19185" rpy="0 ${-pi/2} ${pi/2}"/>
   </xacro:sensor_d435>
 
   <link name="table">
