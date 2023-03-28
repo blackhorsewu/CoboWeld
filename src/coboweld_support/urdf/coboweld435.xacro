@@ -83,10 +83,10 @@
   <!-- Import the realsense D435 description -->
   <xacro:include filename="$(find realsense2_description)/urdf/_d435.urdf.xacro" />
   <xacro:sensor_d435 parent="wrist_3_link" use_nominal_extrinsics="true" name="d435">
+    <origin xyz="0.0 -0.0225 0.19185" rpy="0 ${-pi/2} ${pi/2}"/>
     <!--
-    <origin xyz="0.0 -0.0225 0.19185" rpy="0 ${-pi/2} ${pi/2}"/>
+    <origin xyz="0.003 -0.023 0.19215" rpy="-0.006 -1.570 1.565"/>
     -->
-    <origin xyz="0.0 -0.0225 0.19185" rpy="0 ${-pi/2} ${pi/2}"/>
   </xacro:sensor_d435>
 
   <link name="table">

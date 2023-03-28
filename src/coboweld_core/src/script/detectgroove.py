@@ -75,21 +75,21 @@ import csv
 #*************************#
 # 1. Feature value neighbours
 feature_neighbours = 6
-# 2. Distance between cluster neighbours
-cluster_neighbour_distance = 0.008 # m or 8mm
+# 2. Maximum distance between cluster neighbours
+cluster_neighbour_distance = 0.007 # m or 8mm
 # 3. Minimum cluster members
 min_cluster_memb = 6
 # 4. Point cloud thickness in thin_line
-thickness = 0.0143
+thickness = 0.007
 # 5. Voxel size
 voxelsize = 0.001 # m or 1mm
 # 6. Normal estimation neighbourhood
 # radius
-my_radius = 0.012 # m or 12mm
+my_radius = 0.01 # m or 12mm
 # maximum nearest neighbours
-maxnn = 452
+maxnn = 350
 # 7. Delete percentage of feature values
-percentage = 0.96
+percentage = 0.98
 
 execute = False
 
@@ -538,7 +538,7 @@ def find_orientation(path):
 
   return ur_poses
 
-def detect_groove_workflow(pcd, first_round):
+def detect_groove_workflow(pcd):
 
   original_pcd = pcd
 
@@ -728,15 +728,15 @@ if __name__ == "__main__":
   startchsj = [0.6792, -0.4243, -2.5662, -0.1751, 0.9010, 0.0188]
   startchs1j = [-0.4060, -1.4229, -2.2255, 0.5201, 1.0502, -0.0131]
 
-  robot.movej(home1j, 0.4, 0.4, wait=True)
-  time.sleep(0.2)
-
-  robot.movej(startchs1j, 0.4, 0.4, wait=True)
-  robot.set_tcp((0, 0, 0, 0, 0, 0))
-  time.sleep(0.3)
-
-  first_round = True
+  # first_round = True
   while not rospy.is_shutdown():
+
+    robot.movej(home1j, 0.4, 0.4, wait=True)
+    time.sleep(0.2)
+
+    robot.movej(startchs1j, 0.4, 0.4, wait=True)
+    robot.set_tcp((0, 0, 0, 0, 0, 0))
+    time.sleep(0.3)
 
     if not received_ros_cloud is None:
       received_open3d_cloud = orh.rospc_to_o3dpc(received_ros_cloud)
@@ -746,13 +746,13 @@ if __name__ == "__main__":
       pub_captured.publish(rviz_cloud)
 
       tcp_pose = robot.get_pose()
-      ur_poses = detect_groove_workflow(received_open3d_cloud, first_round)
+      ur_poses = detect_groove_workflow(received_open3d_cloud)
 
       if execute:
         reply = input('Do you want to move to the Approaching Point? Y for yes: ')
         if (reply == "y"):
           # torch_tcp = [0.0, -0.105, 0.365, 0.0, 0.0, 0.0]
-          torch_tcp = [0.0, -0.105, 0.377, 0.0, 0.0, 0.0]
+          torch_tcp = [0.0, -0.095, 0.365, 0.0, 0.0, 0.0]
           robot.set_tcp(torch_tcp)
           # pause is essential for tcp to take effect, min time is 0.1s
           time.sleep(0.2)
@@ -762,11 +762,11 @@ if __name__ == "__main__":
 
           input('\nPress any to continue')
           robot.movel(ur_poses[1], acc =0.1, vel=0.1, wait=True)
-          time.sleep(1.0)
+          time.sleep(0.5)
           robot.set_digital_out(0, True)
-          time.sleep(1.0)
+          time.sleep(0.5)
           robot.movels(ur_poses[1:-2], acc=0.1, vel=0.1, wait=True)
-          time.sleep(1.0)
+          time.sleep(0.5)
           robot.set_digital_out(0, False)
           robot.movel(ur_poses[-1], acc=0.1, vel=0.1, wait=True)
 
@@ -776,7 +776,7 @@ if __name__ == "__main__":
     if (reply == 'n'):
       break
 
-      #first_round = False
+    #first_round = False
 
   print("\n ************* End ************* ")
 

@@ -11,11 +11,12 @@
 
     <!-- fill in the following parameters according to your robot's published tf frames -->
     <arg name="robot_base_frame" value="base"/>
+    <!-- tool0 and wrist_3_link are the same, Victor Wu 28 March 2023. -->
     <arg name="robot_effector_frame" value="tool0"/>
 
     <!-- fill in the following parameters according to your tracking system's published tf frames -->
     <!-- <arg name="tracking_base_frame" value="camera_color_optical_frame"/> -->
-    <arg name="tracking_base_frame" value="d435i_color_optical_frame"/>
+    <arg name="tracking_base_frame" value="d435_color_optical_frame"/>
     <arg name="tracking_marker_frame" value="ar_marker_avg"/>
 
     <!--
