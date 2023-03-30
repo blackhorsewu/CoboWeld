@@ -25,8 +25,11 @@
 *  Revision 4: 9 February, 2023.
 *     Introduce URx into CoboWeld.
 *
-*  Revision 5: 16 March, 2323.
+*  Revision 5: 16 March, 2023.
 *     Parameters adjusted for the Y-tube joint.
+*
+*  Revision 6: 30 March, 2023.
+*     Use tf for coordinate transformations.
 *
 *  Copyright (c) 2022-2023 Victor W H Wu
 *
@@ -41,12 +44,14 @@
 *  open3d, 
 *  math,
 *  open3d_ros_helper,
-*  urx
+*  urx,
+*  tf
 *
 '''
 # Imports for ROS
 import roslib
 import rospy
+import tf
 import sys
 
 import numpy as np
@@ -120,7 +125,6 @@ def transform_cam_wrt_base(pcd):
                                       [ 0.0000000,  0.0000000,  0.0000000,  1.00000]] )
   
   # Updated on 21 March 2023 by Victor Wu
-  '''
   T_cam_wrt_end_effector = np.array([[1.000000, 0.000000, 0.000000, -0.010600], 
                                      #[1.000000, 0.000000, 0.000000, -0.017600],
                                      [0.000000, 1.000000, 0.000000, -0.03000],
@@ -137,7 +141,25 @@ def transform_cam_wrt_base(pcd):
   # pcd_copy2.paint_uniform_color([1, 0, 0])
   # Do not change the colour, commented out by Victor Wu on 26 July 2022.
   # o3d.visualization.draw_geometries([pcd, pcd_copy1, pcd_copy1, pcd_copy2])
-  return pcd_copy2
+  '''
+
+  # Updated on 30 March 2023 by Victor Wu.
+  try:
+    now = rospy.Time.now()
+    listener.waitForTransform("/base", "/d435_depth_optical_frame", now, rospy.Duration(4.0))
+    (trans, rot) = listener.lookupTransform("/base", "/d435_depth_optical_frame", now)
+    r = R.from_quat(rot)
+    transformation = np.vstack((np.hstack((r.as_matrix(), np.vstack((trans))
+                                          )
+                                         ),
+                                [0, 0, 0, 1]
+                               )
+                              )
+    pcd_copy = copy.deepcopy(pcd).transform(transformation)
+  except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+    print("tf error!")
+
+  return pcd_copy
 
 def normalize_feature(feature_value_list):
     
@@ -553,8 +575,8 @@ def detect_groove_workflow(pcd):
       # 50mm x 50mm plane with 0.5m depth
       #min_bound = (-0.015, -0.025, 0.2), 
       #max_bound = (0.035, 0.025, 0.5)  
-      min_bound = (-1.0, -0.10, 0.25), 
-      max_bound = (0.5, 0.10, 0.35)  
+      min_bound = (-0.5, -0.10, 0.25), 
+      max_bound = (0.8, 0.10, 0.34)  
   )
 
   ## b. Define voxel size
@@ -694,6 +716,8 @@ if __name__ == "__main__":
   # Initialize the node and name it.
   rospy.init_node('coboweld_core', anonymous=True)
 
+  listener = tf.TransformListener()
+
   # Must have __init__(self) function for a class, similar to a C++ class constructor.
 
   # delete_percentage = 0.95 ORIGINAL VALUE
@@ -728,6 +752,8 @@ if __name__ == "__main__":
   startchsj = [0.6792, -0.4243, -2.5662, -0.1751, 0.9010, 0.0188]
   startchs1j = [-0.4060, -1.4229, -2.2255, 0.5201, 1.0502, -0.0131]
 
+  listener.waitForTransform("/base", "/d435_depth_optical_frame", rospy.Time(), rospy.Duration(4.0))
+
   # first_round = True
   while not rospy.is_shutdown():
 
@@ -752,7 +778,7 @@ if __name__ == "__main__":
         reply = input('Do you want to move to the Approaching Point? Y for yes: ')
         if (reply == "y"):
           # torch_tcp = [0.0, -0.105, 0.365, 0.0, 0.0, 0.0]
-          torch_tcp = [0.0, -0.095, 0.365, 0.0, 0.0, 0.0]
+          torch_tcp = [0.0, -0.095, 0.385, 0.0, 0.0, 0.0]
           robot.set_tcp(torch_tcp)
           # pause is essential for tcp to take effect, min time is 0.1s
           time.sleep(0.2)
