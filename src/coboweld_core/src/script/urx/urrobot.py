@@ -375,8 +375,8 @@ class URRobot(object):
         This method is usefull since any new command from python
         to robot make the robot stop
         """
-        return self.movexs("movel", pose_list, acc, vel, radius,
-                           wait, threshold=threshold)
+        return self.movexs("movel", pose_list, acc=acc, vel=vel, radius=radius,
+                           wait=wait, threshold=threshold)
 
     def movexs(self, command, pose_list, acc=0.01, vel=0.01, radius=0.01,
                wait=True, threshold=None):
@@ -434,6 +434,60 @@ class URRobot(object):
             elif command == 'movej':
                 self._wait_for_move(target=pose_list[-1], threshold=threshold, joints=True)
                 return self.getj()
+
+    def execute_ls(self, pose_list, output, acc=0.01, vel=0.01, radius=0.01,
+               wait=True, threshold=None):
+        """
+        Concatenate several movex commands and applies a blending radius
+        pose_list is a list of pose.
+        This method is usefull since any new command from python
+        to robot make the robot stop
+        """
+        header = "def myProg():\n"
+        end = "end\n"
+        prog = header
+        #prog += "digital_out[%s]=%s" % (output, 1)
+        prog += 'digital_out[%s]=%s\n' % (output, True)
+        #prog += 'digital_out[0]=True\n'
+        # Check if 'vel' is a single number or a sequence.
+        if isinstance(vel, numbers.Number):
+            # Make 'vel' a sequence
+            vel = len(pose_list) * [vel]
+        elif not isinstance(vel, collections.Sequence):
+            raise RobotException(
+                'movexs: "vel" must be a single number or a sequence!')
+        # Check for adequate number of speeds
+        if len(vel) != len(pose_list):
+            raise RobotException(
+                'movexs: "vel" must be a number or a list '
+                + 'of numbers the same length as "pose_list"!')
+        # Check if 'radius' is a single number.
+        if isinstance(radius, numbers.Number):
+            # Make 'radius' a sequence
+            radius = len(pose_list) * [radius]
+        elif not isinstance(radius, collections.Sequence):
+            raise RobotException(
+                'movexs: "radius" must be a single number or a sequence!')
+        # Ensure that last pose a stopping pose.
+        radius[-1] = 0.0
+        # Require adequate number of radii.
+        if len(radius) != len(pose_list):
+            raise RobotException(
+                'movexs: "radius" must be a number or a list '
+                + 'of numbers the same length as "pose_list"!')
+        prefix = 'p'
+        for idx, pose in enumerate(pose_list):
+            prog += self._format_move('movel', pose, acc,
+                                      vel[idx], radius[idx],
+                                      prefix=prefix) + "\n"
+        #prog += "digital_out[%s]=%s" % (output, 0)
+        prog += 'digital_out[%s]=%s\n' % (output, False)
+        #prog += 'digital_out[0]=False\n'
+        prog += end
+        self.send_program(prog)
+        if wait:
+            self._wait_for_move(target=pose_list[-1], threshold=threshold, joints=False)
+        return self.getl()
 
     def stopl(self, acc=0.5):
         self.send_program("stopl(%s)" % acc)
