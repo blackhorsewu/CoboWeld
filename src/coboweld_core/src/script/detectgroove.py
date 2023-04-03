@@ -53,6 +53,7 @@ import roslib
 import rospy
 import tf
 import sys
+import os
 
 import numpy as np
 import open3d as o3d
@@ -789,11 +790,12 @@ if __name__ == "__main__":
           input('\nPress any to continue')
           robot.movel(ur_poses[1], acc =0.1, vel=0.1, wait=True)
           time.sleep(0.5)
-          robot.set_digital_out(0, True)
-          time.sleep(0.5)
-          robot.movels(ur_poses[1:-2], acc=0.1, vel=0.1, wait=True)
-          time.sleep(0.5)
-          robot.set_digital_out(0, False)
+          # robot.set_digital_out(0, True)
+          # time.sleep(0.5)
+          # robot.movels(ur_poses[1:-2], acc=0.1, vel=0.1, wait=True)
+          robot.execute_ls(ur_poses[1:-2], output=0, acc=0.1, vel=0.1, wait=True)
+          # time.sleep(0.5)
+          # robot.set_digital_out(0, False)
           robot.movel(ur_poses[-1], acc=0.1, vel=0.1, wait=True)
 
           robot.movej(home1j, 0.4, 0.4, wait=True)
