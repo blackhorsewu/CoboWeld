@@ -95,9 +95,8 @@ especially if I want to do hand eye calibration.
 RobotWeld depends on:
 1. C++, Python3, UR Robot Driver
 2. It uses URx to control the UR5 or R10. Therefore, it is necessary to install URx. It is now much simpler than before. To install URx, just do `pip3 install urx` and it will collect all the necessary dependencies and installed them.
-3. It also uses Open3D for most of the computer vision tasks, so it is also needed to be installed. This package runs on ROS Noetic on Ubuntu 20.04, therefore, it should have Python 3.8.0. When I tried to install it, I followed instructions from [Open3D](http://www.open3d.org/docs/release/getting_started.html). But I received a complaint `launchpadlib 1.10.13 requires testresources, which is not installed.` Then, I did `sudo apt install python3-testresources`. This helped and it does not complaint again. Tested `Open3D` is installed by invoking Python3 and import it. It should not complaint about no `Open3D` module.
-4. 
-
+3. Currently, it is now using a special version, that I have modified and stored in `coboweld_core/src/script/urx/urrobot.py`. This is necessary because the `digital_out` will only be switch on while a program is running. If for any reason, the e-switch on the teach pendent is pushed, it should switch `off` the welding machine, otherwise it would be very dangerous. However, URx sends every instruction to UR5 as a program. Therefore, once the `set_digital_out` instruction is sent, there is no program running and hence the `digital_out` will be switched off. To overcome this problem, I have modified URx, in specific, the `urrobot.py`. A function called `execute_ls` added. That will take an added parameter, `output`, to switch `on` before moving the welding torch along the welding path and switch `off` after the path is traversed. (3 April, 2023.)
+4. It also uses Open3D for most of the computer vision tasks, so it is also needed to be installed. This package runs on ROS Noetic on Ubuntu 20.04, therefore, it should have Python 3.8.0. When I tried to install it, I followed instructions from [Open3D](http://www.open3d.org/docs/release/getting_started.html). But I received a complaint `launchpadlib 1.10.13 requires testresources, which is not installed.` Then, I did `sudo apt install python3-testresources`. This helped and it does not complaint again. Tested `Open3D` is installed by invoking Python3 and import it. It should not complaint about no `Open3D` module.
 
 ---
 
@@ -160,7 +159,7 @@ pip3 install open3d_ros_helper
 
 Then comes the crucial part. When we look at the github for the [open_3d_helper](https://github.com/SeungBack/open3d-ros-helper), we find there is a commit remark `cloud_array ravel added to rospc_to_o3dpc`. `rospc_to_o3dpc` is exactly the function that is needed to convert ROS pointcloud2 to Open3d point clouds. After getting into the folder of `open3d_ros_helper`, there is the `open3d_ros_helper.py` file with a commit remark next to this file name. When this remark is clicked, it will show exactly where has been changed on the date `1 April 2021`. On line 261 of this file, `.ravel()` was added to the end.
 
-It is absolutely important to follow this and add this `.ravel()` to the end of line 261 in the file `~/.local/lib/python3.8/site-packages/open3d_ros_helper/open3d_ros_helper.py`. Otherwise, when the program is run, a RuntimeError will complaint that `o3d.colors = open3d.utility.Vector3dVector(rgb_npy)`.
+It is absolutely **important** to follow this and add this `.ravel()` to the end of line 261 in the file `~/.local/lib/python3.8/site-packages/open3d_ros_helper/open3d_ros_helper.py`. Otherwise, when the program is run, a RuntimeError will complaint that `o3d.colors = open3d.utility.Vector3dVector(rgb_npy)`.
 
 
 
