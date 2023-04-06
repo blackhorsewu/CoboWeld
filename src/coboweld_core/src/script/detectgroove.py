@@ -31,6 +31,9 @@
 *  Revision 6: 30 March, 2023.
 *     Use tf for coordinate transformations.
 *
+*  Revision 7: 6 April, 2023.
+*     Use ArUCo marker to locate the groove.
+*
 *  Copyright (c) 2022-2023 Victor W H Wu
 *
 *  Description:
@@ -45,7 +48,9 @@
 *  math,
 *  open3d_ros_helper,
 *  urx,
-*  tf
+*  tf,
+*  OpenCV,
+*  cv_bridge
 *
 '''
 # Imports for ROS
@@ -55,13 +60,16 @@ import tf
 import sys
 import os
 
+import cv2
+from cv_bridge import CvBridge, CvBridgeError
+
 import numpy as np
 import open3d as o3d
 import copy
 import math
 
 from std_msgs.msg import Header
-from sensor_msgs.msg import PointCloud2, PointField
+from sensor_msgs.msg import PointCloud2, PointField, Image
 from geometry_msgs.msg import PoseStamped, Pose, PoseArray, Point
 from visualization_msgs.msg import Marker, MarkerArray
 import sensor_msgs.point_cloud2 as pc2
@@ -109,6 +117,16 @@ def callback_roscloud(ros_cloud):
     global received_ros_cloud
 
     received_ros_cloud = ros_cloud
+
+# Call back function to receive a ROS colour image published by RealSense D435 camera
+def callback_image(data):
+  global cv_image
+  try:
+    cv_image = bridge.imgmsg_to_cv2(data, "bgr8")
+    cv2.imshow('Image window', cv_image)
+    cv2.waitKey(0)
+  except ChildProcessError as e:
+    print(e)
 
 def transform_cam_wrt_base(pcd):
 
@@ -706,7 +724,7 @@ def detect_groove_workflow(pcd):
 # Main function.
 if __name__ == "__main__":
 
-  global received_ros_cloud
+  global received_ros_cloud, cv_image
 
   if len(sys.argv) > 1:
     if sys.argv[1] == 'execute':
@@ -726,10 +744,19 @@ if __name__ == "__main__":
 
   received_ros_cloud = None
 
-  # Setup subscriber
+  # Setup subscriber for point cloud
   rospy.Subscriber('/d435/depth/color/points', PointCloud2, 
                     callback_roscloud, queue_size=1
                   )
+  
+  '''
+  # Setup subscriber for color image
+  rospy.Subscriber('/d435/color/image_raw', Image,
+                   callback_image, queue_size=1
+                  )
+
+  bridge = CvBridge()
+  '''
 
   # Setup publishers
   pub_captured = rospy.Publisher("captured", PointCloud2, queue_size=1)
@@ -749,6 +776,7 @@ if __name__ == "__main__":
   robot = urx.Robot('192.168.0.103')
 
   home1j = [0.0001, -1.1454, -2.7596, 0.7290, 0.0000, 0.0000]
+  home2j = [0.6496, -1.1454, -2.7596, 0.7289, 0.0000, 0.0000]
   startG1j = [0.2173, -1.8616, -0.2579, -2.6004, 1.5741, 0.2147]
   startchsj = [0.6792, -0.4243, -2.5662, -0.1751, 0.9010, 0.0188]
   startchs1j = [-0.4060, -1.4229, -2.2255, 0.5201, 1.0502, -0.0131]
