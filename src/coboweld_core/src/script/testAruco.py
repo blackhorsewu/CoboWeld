@@ -59,7 +59,11 @@ def pose_estimation(frame, aruco_dict_type, matrix_coefficients, distortion_coef
   parameters = cv2.aruco.DetectorParameters_create()
 
 
-  corners, ids, rejected_img_points = cv2.aruco.detectMarkers(gray, cv2.aruco_dict,parameters=parameters)
+  corners, ids, rejected_img_points = cv2.aruco.detectMarkers(
+      gray,
+      cv2.aruco_dict,
+      parameters=parameters
+    )
     #cameraMatrix=matrix_coefficients,
     #distCoeff=distortion_coefficients)
 
@@ -67,8 +71,12 @@ def pose_estimation(frame, aruco_dict_type, matrix_coefficients, distortion_coef
   if len(corners) > 0:
     for i in range(0, len(ids)):
         
-      rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(corners[i], 0.02, matrix_coefficients,
-                                                            distortion_coefficients)
+      rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(
+          corners[i], 
+          0.0245, 
+          matrix_coefficients,
+          distortion_coefficients
+        )
       tvec = tvec[0,0]
       #print('tvec: ', tvec.shape)
       rvec = rvec[0,0]
@@ -112,15 +120,19 @@ def callback(data):
 # print('I am here 1.')
 rospy.init_node('testAruco', anonymous=True)
 
+pub_pose = rospy.Publisher('/ArUCo', PoseStamped, queue_size=1)
+
 # print('I am here 2.')
 
-rospy.Subscriber('/d435/color/image_raw', Image, callback, queue_size=1)
-# print('I am here 3.\n')
+# rospy.Subscriber('/d435/color/image_raw', Image, callback, queue_size=1)
 
-pub_pose = rospy.Publisher('/ArUCo', PoseStamped, queue_size=1)
+# print('I am here 3.\n')
 
 ''''''
 while not rospy.is_shutdown():
-  time.sleep(1)
+  data = rospy.wait_for_message('/d435/color/image_raw', Image, timeout=10)
+  cv_image = bridge.imgmsg_to_cv2(data, "bgr8")
+  pose_estimation(cv_image, ARUCO_DICT[aruco_type], intrinsic_camera, distortion)
+  #time.sleep(1)
 
 cv2.destroyAllWindows()

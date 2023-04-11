@@ -69,7 +69,7 @@ import copy
 import math
 
 from std_msgs.msg import Header
-from sensor_msgs.msg import PointCloud2, PointField, Image
+from sensor_msgs.msg import PointCloud2, PointField, Image, CameraInfo
 from geometry_msgs.msg import PoseStamped, Pose, PoseArray, Point
 from visualization_msgs.msg import Marker, MarkerArray
 import sensor_msgs.point_cloud2 as pc2
@@ -112,19 +112,116 @@ execute = False
 # Refer to README.md 
 from open3d_ros_helper import open3d_ros_helper as orh
 
+ARUCO_DICT = {
+	"DICT_4X4_50": cv2.aruco.DICT_4X4_50,
+	"DICT_4X4_100": cv2.aruco.DICT_4X4_100,
+	"DICT_4X4_250": cv2.aruco.DICT_4X4_250,
+	"DICT_4X4_1000": cv2.aruco.DICT_4X4_1000,
+	"DICT_5X5_50": cv2.aruco.DICT_5X5_50,
+	"DICT_5X5_100": cv2.aruco.DICT_5X5_100,
+	"DICT_5X5_250": cv2.aruco.DICT_5X5_250,
+	"DICT_5X5_1000": cv2.aruco.DICT_5X5_1000,
+	"DICT_6X6_50": cv2.aruco.DICT_6X6_50,
+	"DICT_6X6_100": cv2.aruco.DICT_6X6_100,
+	"DICT_6X6_250": cv2.aruco.DICT_6X6_250,
+	"DICT_6X6_1000": cv2.aruco.DICT_6X6_1000,
+	"DICT_7X7_50": cv2.aruco.DICT_7X7_50,
+	"DICT_7X7_100": cv2.aruco.DICT_7X7_100,
+	"DICT_7X7_250": cv2.aruco.DICT_7X7_250,
+	"DICT_7X7_1000": cv2.aruco.DICT_7X7_1000,
+	"DICT_ARUCO_ORIGINAL": cv2.aruco.DICT_ARUCO_ORIGINAL,
+	"DICT_APRILTAG_16h5": cv2.aruco.DICT_APRILTAG_16h5,
+	"DICT_APRILTAG_25h9": cv2.aruco.DICT_APRILTAG_25h9,
+	"DICT_APRILTAG_36h10": cv2.aruco.DICT_APRILTAG_36h10,
+	"DICT_APRILTAG_36h11": cv2.aruco.DICT_APRILTAG_36h11
+}
+
+aruco_type = "DICT_5X5_100"
+
 # Call back function to receive a ROS point cloud published by the RealSense D435 camera
 def callback_roscloud(ros_cloud):
     global received_ros_cloud
 
     received_ros_cloud = ros_cloud
 
+def callback_info(CameraInfo):
+  global intrinsic_camera, distortion
+  intrinsic_camera = np.array(CameraInfo.K)
+  intrinsic_camera = intrinsic_camera.reshape(3, 3)
+  # print('intrinsic_camera: ', intrinsic_camera)
+  distortion = np.array(CameraInfo.D)
+  # print('distortion: ', distortion)
+
+bridge = CvBridge()
+  
+def pose_estimation(frame, aruco_dict_type, matrix_coefficients, distortion_coefficients):
+
+  aruco_pose = PoseStamped()
+  gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+  cv2.aruco_dict = cv2.aruco.Dictionary_get(aruco_dict_type)
+  parameters = cv2.aruco.DetectorParameters_create()
+
+
+  corners, ids, rejected_img_points = cv2.aruco.detectMarkers(
+      gray,
+      cv2.aruco_dict,
+      parameters=parameters
+    )
+
+      
+  if len(corners) > 0:
+    for i in range(0, len(ids)):
+        
+      rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(
+          corners[i], 
+          0.0245, 
+          matrix_coefficients,
+          distortion_coefficients
+        )
+      tvec = tvec[0,0]
+      #print('tvec: ', tvec.shape)
+      rvec = rvec[0,0]
+      #print('rvec: ', rvec.shape)
+      r = R.from_rotvec(rvec)
+      matrix = r.as_matrix()
+      # marker's Z-axis cross world X-axis
+      dot_prod = abs(np.dot(matrix[2,:],[1.0, 0.0, 0.0])) 
+      if dot_prod < 0.00055:
+        print(dot_prod)
+        orientation = r.as_quat()
+        # It should be possible to construct a pose to be published in RViz
+        # A pose consists of (a) position x, y, z, (b) orientation in quaternion x, y, z, w
+        #
+        # position
+        aruco_pose.pose.position.x = tvec[0]
+        aruco_pose.pose.position.y = tvec[1]
+        aruco_pose.pose.position.z = tvec[2]
+        # orientation
+        aruco_pose.pose.orientation.x = orientation[0]
+        aruco_pose.pose.orientation.y = orientation[1]
+        aruco_pose.pose.orientation.z = orientation[2]
+        aruco_pose.pose.orientation.w = orientation[3]
+
+        aruco_pose.header.frame_id = 'd435_color_optical_frame'
+        aruco_pose.header.stamp = rospy.Time.now()
+        pub_pose.publish(aruco_pose)
+
+        cv2.aruco.drawDetectedMarkers(frame, corners) 
+
+        #cv2.aruco.drawAxis(frame, matrix_coefficients, distortion_coefficients, rvec, tvec, 0.01)
+        cv2.drawFrameAxes(frame, matrix_coefficients, distortion_coefficients, rvec, tvec, 0.01)  
+
+  return frame
+
 # Call back function to receive a ROS colour image published by RealSense D435 camera
 def callback_image(data):
   global cv_image
   try:
     cv_image = bridge.imgmsg_to_cv2(data, "bgr8")
-    cv2.imshow('Image window', cv_image)
-    cv2.waitKey(0)
+    pose_estimation(cv_image, ARUCO_DICT[aruco_type], intrinsic_camera, distortion)
+    # cv2.imshow('Image window', cv_image)
+    # cv2.waitKey(0)
+    pub_pose = rospy.Publisher('/ArUCo', PoseStamped, queue_size=1)
   except ChildProcessError as e:
     print(e)
 
@@ -749,14 +846,16 @@ if __name__ == "__main__":
                     callback_roscloud, queue_size=1
                   )
   
-  '''
+  ''''''
   # Setup subscriber for color image
   rospy.Subscriber('/d435/color/image_raw', Image,
                    callback_image, queue_size=1
                   )
+  
+  # Setup subscriber for camera info
+  rospy.Subscriber('/d435/color/camera_info', CameraInfo,
+                   callback_info, queue_size=1)
 
-  bridge = CvBridge()
-  '''
 
   # Setup publishers
   pub_captured = rospy.Publisher("captured", PointCloud2, queue_size=1)
@@ -764,8 +863,13 @@ if __name__ == "__main__":
   pub_clustered = rospy.Publisher("clustered", PointCloud2, queue_size=1)
   pub_path = rospy.Publisher("path", PointCloud2, queue_size=1)
   pub_poses = rospy.Publisher('poses', PoseArray, queue_size=1)
-  # pub_neighbours = rospy.Publisher("neighbours", PointCloud2, queue_size=1)
+  pub_pose = rospy.Publisher('/ArUCo', PoseStamped, queue_size=1)
+# pub_neighbours = rospy.Publisher("neighbours", PointCloud2, queue_size=1)
 
+  aruco_type = "DICT_5X5_100"
+
+  arucoDict = cv2.aruco.Dictionary_get(ARUCO_DICT[aruco_type])
+  arucoParams = cv2.aruco.DetectorParameters_create()
 
   print("\n ************* Start *************")
 
@@ -786,13 +890,15 @@ if __name__ == "__main__":
   # first_round = True
   while not rospy.is_shutdown():
 
-    robot.movej(home1j, 0.4, 0.4, wait=True)
-    time.sleep(0.2)
+    # robot.movej(home1j, 0.4, 0.4, wait=True)
+    # time.sleep(0.2)
 
-    robot.movej(startchs1j, 0.4, 0.4, wait=True)
-    robot.set_tcp((0, 0, 0, 0, 0, 0))
-    time.sleep(0.3)
+    # robot.movej(startchs1j, 0.4, 0.4, wait=True)
+    # robot.set_tcp((0, 0, 0, 0, 0, 0))
+    # time.sleep(0.3)
 
+
+    '''
     if not received_ros_cloud is None:
       received_open3d_cloud = orh.rospc_to_o3dpc(received_ros_cloud)
 
@@ -827,11 +933,11 @@ if __name__ == "__main__":
           robot.movel(ur_poses[-1], acc=0.1, vel=0.1, wait=True)
 
           robot.movej(home1j, 0.4, 0.4, wait=True)
-    
+
     reply = input('Do you want to do it again? :')
     if (reply == 'n'):
       break
-
+    '''
     #first_round = False
 
   print("\n ************* End ************* ")
