@@ -179,12 +179,22 @@ def pose_estimation(frame, aruco_dict_type, matrix_coefficients, distortion_coef
           distortion_coefficients
         )
       tvec = tvec[0,0]
-      #print('tvec: ', tvec.shape)
+      # print('tvec: ', tvec.shape)
       rvec = rvec[0,0]
-      #print('rvec: ', rvec.shape)
-      r = R.from_rotvec(rvec)
-      matrix = r.as_matrix()
-      orientation = r.as_quat()
+      # rvec = rvec * [-pi, 0.0, 0.0]
+      # print('rvec: ', rvec.shape)
+      
+      # The marker is pointing towards the camera
+      # It is necessary to use it to point away from the camera
+      # This can be done by rotating about the X-axis
+      r = R.from_rotvec(rvec) # get the r from rotation vector
+      ar_mat = r.as_matrix()  # get the rotation matrix from r
+      # multiply it with this matrix to rotate it about X-axis
+      ar_mat = ar_mat * [[1, 0, 0],[0, -1, 0],[0, 0, -1]]
+
+      ar_r = R.from_matrix(ar_mat)  # get a new r from the new matrix
+      ar_quat = ar_r.as_quat()      # get the quaternion for publishing
+
       # Construct a pose to be published in RViz
       # A pose, to be published in RViz, consists of:
       #  (a) position x, y, z, 
@@ -195,20 +205,17 @@ def pose_estimation(frame, aruco_dict_type, matrix_coefficients, distortion_coef
       aruco_pose.pose.position.y = tvec[1]
       aruco_pose.pose.position.z = tvec[2]
       # orientation
-      aruco_pose.pose.orientation.x = orientation[0]
-      aruco_pose.pose.orientation.y = orientation[1]
-      aruco_pose.pose.orientation.z = orientation[2]
-      aruco_pose.pose.orientation.w = orientation[3]
+      aruco_pose.pose.orientation.x = ar_quat[0]
+      aruco_pose.pose.orientation.y = ar_quat[1]
+      aruco_pose.pose.orientation.z = ar_quat[2]
+      aruco_pose.pose.orientation.w = ar_quat[3]
 
       aruco_pose.header.frame_id = 'd435_color_optical_frame'
       aruco_pose.header.stamp = rospy.Time.now()
+      # aruco_pose = aruco_pose.inverse()
       pub_pose.publish(aruco_pose)
 
-      cv2.aruco.drawDetectedMarkers(frame, corners) 
-
-      # cv2.drawFrameAxes(frame, matrix_coefficients, distortion_coefficients, rvec, tvec, 0.01)  
-
-  return frame
+  # return frame
 
 # Call back function to receive a ROS colour image published by RealSense D435 camera
 def callback_image(data):
@@ -216,45 +223,11 @@ def callback_image(data):
   try:
     cv_image = bridge.imgmsg_to_cv2(data, "bgr8")
     pose_estimation(cv_image, ARUCO_DICT[aruco_type], intrinsic_camera, distortion)
-    # cv2.imshow('Image window', cv_image)
-    # cv2.waitKey(0)
-    pub_pose = rospy.Publisher('/ArUCo', PoseStamped, queue_size=1)
+    rospy.Publisher('/ArUCo', PoseStamped, queue_size=1)
   except ChildProcessError as e:
     print(e)
 
 def transform_cam_wrt_base(pcd):
-
-  # Added by Victor Wu on 25 July 2022 for Realsense D435i on UR5
-  # Updated on 29 July 2022. Needs calibration later.
-  '''
-  T_cam_wrt_end_effector = np.array( [[ 1.0000000,  0.0000000,  0.0000000, -0.01270],
-                                      [ 0.0000000,  1.0000000,  0.0000000, -0.04000],
-                                      [ 0.0000000,  0.0000000,  1.0000000,  0.18265],
-                                      [ 0.0000000,  0.0000000,  0.0000000,  1.00000]] )
-  # Z in translation added 0.015m because base is 0.015m above table
-  T_cam_wrt_end_effector = np.array( [[ 1.0000000,  0.0000000,  0.0000000, -0.01750],
-                                      [ 0.0000000,  1.0000000,  0.0000000, -0.03800],
-                                      [ 0.0000000,  0.0000000,  1.0000000,  0.18400],
-                                      [ 0.0000000,  0.0000000,  0.0000000,  1.00000]] )
-  
-  # Updated on 21 March 2023 by Victor Wu
-  T_cam_wrt_end_effector = np.array([[1.000000, 0.000000, 0.000000, -0.010600], 
-                                     #[1.000000, 0.000000, 0.000000, -0.017600],
-                                     [0.000000, 1.000000, 0.000000, -0.03000],
-                                     #[0.000000, 1.000000, 0.000000, -0.1050], 
-                                     [0.000000, 0.000000, 1.000000,  0.20400],
-                                     #[0.000000, 0.000000, 1.000000,  0.170], 
-                                     [0.000000, 0.000000, 0.000000,  1.000000]])
-  
-  pcd_copy1 = copy.deepcopy(pcd).transform(T_cam_wrt_end_effector)
-  # pcd_copy1.paint_uniform_color([0.5, 0.5, 1]) 
-  # Do not change the colour, commented out by Victor Wu on 26 July 2022.
-
-  pcd_copy2 = copy.deepcopy(pcd_copy1).transform(tcp_pose.array)
-  # pcd_copy2.paint_uniform_color([1, 0, 0])
-  # Do not change the colour, commented out by Victor Wu on 26 July 2022.
-  # o3d.visualization.draw_geometries([pcd, pcd_copy1, pcd_copy1, pcd_copy2])
-  '''
 
   # Updated on 30 March 2023 by Victor Wu.
   try:
@@ -830,6 +803,7 @@ if __name__ == "__main__":
   rospy.init_node('coboweld_core', anonymous=True)
 
   listener = tf.TransformListener()
+  aruco_listener = tf.TransformListener()
 
   # Must have __init__(self) function for a class, similar to a C++ class constructor.
 
@@ -861,6 +835,7 @@ if __name__ == "__main__":
   pub_path = rospy.Publisher("path", PointCloud2, queue_size=1)
   pub_poses = rospy.Publisher('poses', PoseArray, queue_size=1)
   pub_pose = rospy.Publisher('/ArUCo', PoseStamped, queue_size=1)
+  pub_marker = rospy.Publisher('/Marker', PoseStamped, queue_size=1)
 # pub_neighbours = rospy.Publisher("neighbours", PointCloud2, queue_size=1)
 
   aruco_type = "DICT_5X5_100"
@@ -894,6 +869,25 @@ if __name__ == "__main__":
     # robot.set_tcp((0, 0, 0, 0, 0, 0))
     # time.sleep(0.3)
 
+    '''
+    aruco_listener.waitForTransform('/d435_color_optical_frame', '/ArUCo', rospy.Time.now(), rospy.Duration(4.0))
+    (staticTrans, staticRot) = aruco_listener.lookupTransform('/d435_color_optical_frame', '/ArUCo', rospy.Time(0))
+
+    marker_pose = PoseStamped()
+    marker_pose.pose.position.x = staticTrans[0]
+    marker_pose.pose.position.y = staticTrans[1]
+    marker_pose.pose.position.z = staticTrans[2]
+    marker_pose.pose.orientation.x = staticRot[0]
+    marker_pose.pose.orientation.y = staticRot[1]
+    marker_pose.pose.orientation.z = staticRot[2]
+    marker_pose.pose.orientation.w = staticRot[3]
+
+    marker_pose.header.frame_id = 'd435_color_optical_frame'
+    marker_pose.header.stamp = rospy.Time.now()
+
+    pub_marker.publish(marker_pose)
+    '''
+
 
     '''
     if not received_ros_cloud is None:
@@ -903,7 +897,7 @@ if __name__ == "__main__":
                                       frame_id="d435_depth_optical_frame")
       pub_captured.publish(rviz_cloud)
 
-      tcp_pose = robot.get_pose()
+      # tcp_pose = robot.get_pose()
       ur_poses = detect_groove_workflow(received_open3d_cloud)
 
       if execute:
