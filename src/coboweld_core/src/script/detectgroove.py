@@ -174,7 +174,7 @@ def pose_estimation(frame, aruco_dict_type, matrix_coefficients, distortion_coef
         
       rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(
           corners[i], 
-          0.0245, 
+          0.0447, # the marker is 45mm square
           matrix_coefficients,
           distortion_coefficients
         )
@@ -184,32 +184,29 @@ def pose_estimation(frame, aruco_dict_type, matrix_coefficients, distortion_coef
       #print('rvec: ', rvec.shape)
       r = R.from_rotvec(rvec)
       matrix = r.as_matrix()
-      # marker's Z-axis cross world X-axis
-      dot_prod = abs(np.dot(matrix[2,:],[1.0, 0.0, 0.0])) 
-      if dot_prod < 0.00055:
-        print(dot_prod)
-        orientation = r.as_quat()
-        # It should be possible to construct a pose to be published in RViz
-        # A pose consists of (a) position x, y, z, (b) orientation in quaternion x, y, z, w
-        #
-        # position
-        aruco_pose.pose.position.x = tvec[0]
-        aruco_pose.pose.position.y = tvec[1]
-        aruco_pose.pose.position.z = tvec[2]
-        # orientation
-        aruco_pose.pose.orientation.x = orientation[0]
-        aruco_pose.pose.orientation.y = orientation[1]
-        aruco_pose.pose.orientation.z = orientation[2]
-        aruco_pose.pose.orientation.w = orientation[3]
+      orientation = r.as_quat()
+      # Construct a pose to be published in RViz
+      # A pose, to be published in RViz, consists of:
+      #  (a) position x, y, z, 
+      #  (b) orientation in quaternion x, y, z, w
+      #
+      # position
+      aruco_pose.pose.position.x = tvec[0]
+      aruco_pose.pose.position.y = tvec[1]
+      aruco_pose.pose.position.z = tvec[2]
+      # orientation
+      aruco_pose.pose.orientation.x = orientation[0]
+      aruco_pose.pose.orientation.y = orientation[1]
+      aruco_pose.pose.orientation.z = orientation[2]
+      aruco_pose.pose.orientation.w = orientation[3]
 
-        aruco_pose.header.frame_id = 'd435_color_optical_frame'
-        aruco_pose.header.stamp = rospy.Time.now()
-        pub_pose.publish(aruco_pose)
+      aruco_pose.header.frame_id = 'd435_color_optical_frame'
+      aruco_pose.header.stamp = rospy.Time.now()
+      pub_pose.publish(aruco_pose)
 
-        cv2.aruco.drawDetectedMarkers(frame, corners) 
+      cv2.aruco.drawDetectedMarkers(frame, corners) 
 
-        #cv2.aruco.drawAxis(frame, matrix_coefficients, distortion_coefficients, rvec, tvec, 0.01)
-        cv2.drawFrameAxes(frame, matrix_coefficients, distortion_coefficients, rvec, tvec, 0.01)  
+      # cv2.drawFrameAxes(frame, matrix_coefficients, distortion_coefficients, rvec, tvec, 0.01)  
 
   return frame
 
