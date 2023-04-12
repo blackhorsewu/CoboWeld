@@ -154,6 +154,7 @@ def callback_info(CameraInfo):
 
 bridge = CvBridge()
   
+# Aruco Marker pose estimation
 def pose_estimation(frame, aruco_dict_type, matrix_coefficients, distortion_coefficients):
 
   aruco_pose = PoseStamped()
@@ -869,26 +870,11 @@ if __name__ == "__main__":
     # robot.set_tcp((0, 0, 0, 0, 0, 0))
     # time.sleep(0.3)
 
-    '''
-    aruco_listener.waitForTransform('/d435_color_optical_frame', '/ArUCo', rospy.Time.now(), rospy.Duration(4.0))
-    (staticTrans, staticRot) = aruco_listener.lookupTransform('/d435_color_optical_frame', '/ArUCo', rospy.Time(0))
-
-    marker_pose = PoseStamped()
-    marker_pose.pose.position.x = staticTrans[0]
-    marker_pose.pose.position.y = staticTrans[1]
-    marker_pose.pose.position.z = staticTrans[2]
-    marker_pose.pose.orientation.x = staticRot[0]
-    marker_pose.pose.orientation.y = staticRot[1]
-    marker_pose.pose.orientation.z = staticRot[2]
-    marker_pose.pose.orientation.w = staticRot[3]
-
-    marker_pose.header.frame_id = 'd435_color_optical_frame'
-    marker_pose.header.stamp = rospy.Time.now()
-
-    pub_marker.publish(marker_pose)
-    '''
-
-
+    # move the depth camera to somewhere near the ArUCo marker.
+    # Since the Marker is 45mm square, the centre is about 22.5mm away
+    # from the groove edge. Assuming the groove is about 15mm wide, so
+    # the d435_depth_optical_frame should be about 30mm below the marker.
+    # It should also be 300mm away from the groove, along the Z-axis.
     '''
     if not received_ros_cloud is None:
       received_open3d_cloud = orh.rospc_to_o3dpc(received_ros_cloud)
