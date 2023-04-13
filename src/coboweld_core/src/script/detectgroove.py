@@ -144,16 +144,17 @@ def callback_roscloud(ros_cloud):
 
     received_ros_cloud = ros_cloud
 
-def callback_info(CameraInfo):
+def getColourCamInfo():
   global intrinsic_camera, distortion
-  intrinsic_camera = np.array(CameraInfo.K)
+  info = rospy.wait_for_message('/d435/color/camera_info', CameraInfo, timeout=10)
+  intrinsic_camera = np.array(info.K)
   intrinsic_camera = intrinsic_camera.reshape(3, 3)
   # print('intrinsic_camera: ', intrinsic_camera)
-  distortion = np.array(CameraInfo.D)
+  distortion = np.array(info.D)
   # print('distortion: ', distortion)
 
 bridge = CvBridge()
-  
+
 # Aruco Marker pose estimation
 def pose_estimation(frame, aruco_dict_type, matrix_coefficients, distortion_coefficients):
 
@@ -213,20 +214,25 @@ def pose_estimation(frame, aruco_dict_type, matrix_coefficients, distortion_coef
 
       aruco_pose.header.frame_id = 'd435_color_optical_frame'
       aruco_pose.header.stamp = rospy.Time.now()
-      # aruco_pose = aruco_pose.inverse()
-      pub_pose.publish(aruco_pose)
+      # pub_pose.publish(aruco_pose)
 
-  # return frame
+  return aruco_pose
 
-# Call back function to receive a ROS colour image published by RealSense D435 camera
-def callback_image(data):
+def getMarkerPose():
+  image = rospy.wait_for_message('/d435/color/image_raw', Image, timeout=10)
   global cv_image
   try:
-    cv_image = bridge.imgmsg_to_cv2(data, "bgr8")
-    pose_estimation(cv_image, ARUCO_DICT[aruco_type], intrinsic_camera, distortion)
-    rospy.Publisher('/ArUCo', PoseStamped, queue_size=1)
+    cv_image = bridge.imgmsg_to_cv2(image, "bgr8")
+    pose = pose_estimation(
+                cv_image,
+                ARUCO_DICT[aruco_type], 
+                intrinsic_camera, 
+                distortion
+              )
+    # rospy.Publisher('/ArUCo', PoseStamped, queue_size=1)
   except ChildProcessError as e:
     print(e)
+  return pose
 
 def transform_cam_wrt_base(pcd):
 
@@ -789,10 +795,15 @@ def detect_groove_workflow(pcd):
 
   return(ur_poses)
 
-# Main function.
+#########################################################
+#                                                       #
+#                    Main function                      #
+#                                                       #
+#########################################################
 if __name__ == "__main__":
 
   global received_ros_cloud, cv_image
+  global intrinsic_camera, distortion
 
   if len(sys.argv) > 1:
     if sys.argv[1] == 'execute':
@@ -817,17 +828,6 @@ if __name__ == "__main__":
   rospy.Subscriber('/d435/depth/color/points', PointCloud2, 
                     callback_roscloud, queue_size=1
                   )
-  
-  ''''''
-  # Setup subscriber for color image
-  rospy.Subscriber('/d435/color/image_raw', Image,
-                   callback_image, queue_size=1
-                  )
-  
-  # Setup subscriber for camera info
-  rospy.Subscriber('/d435/color/camera_info', CameraInfo,
-                   callback_info, queue_size=1)
-
 
   # Setup publishers
   pub_captured = rospy.Publisher("captured", PointCloud2, queue_size=1)
@@ -852,21 +852,37 @@ if __name__ == "__main__":
   
   robot = urx.Robot('192.168.0.103')
 
+  # home1 is when it faces to the right
   home1j = [0.0001, -1.1454, -2.7596, 0.7290, 0.0000, 0.0000]
+  # home2 is when it faces the CHS
   home2j = [0.6496, -1.1454, -2.7596, 0.7289, 0.0000, 0.0000]
   startG1j = [0.2173, -1.8616, -0.2579, -2.6004, 1.5741, 0.2147]
   startchsj = [0.6792, -0.4243, -2.5662, -0.1751, 0.9010, 0.0188]
+  # startchs1 is the target for point cloud capturing
   startchs1j = [-0.4060, -1.4229, -2.2255, 0.5201, 1.0502, -0.0131]
 
   listener.waitForTransform("/base", "/d435_depth_optical_frame", rospy.Time(), rospy.Duration(4.0))
 
+  # Acquire colour camera information include intrinsic matrix and distortion
+  # before pose of ArUCo marker can be found
+  getColourCamInfo()
+  # print('intrinsic_camera: ', intrinsic_camera)
+  # print('distortion: ', distortion)
+
   # first_round = True
   while not rospy.is_shutdown():
 
-    # robot.movej(home1j, 0.4, 0.4, wait=True)
-    # time.sleep(0.2)
+    # move UR5 to starting point
+    robot.movej(home2j, 0.4, 0.4, wait=True)
+    time.sleep(0.2)
+
+    # find the ArUCo marker
+    marker_pose = getMarkerPose()
+    pub_pose.publish(marker_pose)
 
     # robot.movej(startchs1j, 0.4, 0.4, wait=True)
+
+
     # robot.set_tcp((0, 0, 0, 0, 0, 0))
     # time.sleep(0.3)
 
@@ -910,11 +926,10 @@ if __name__ == "__main__":
           robot.movel(ur_poses[-1], acc=0.1, vel=0.1, wait=True)
 
           robot.movej(home1j, 0.4, 0.4, wait=True)
-
+    '''
     reply = input('Do you want to do it again? :')
     if (reply == 'n'):
       break
-    '''
     #first_round = False
 
   print("\n ************* End ************* ")
