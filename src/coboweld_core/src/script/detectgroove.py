@@ -271,6 +271,18 @@ def setDepthCameraPose(marker_pose):
 
   return camPose
 
+# The in_pose is a ROS PoseStamped
+# The out_pose is a URx pose or UR pose, ie first 3 are position,
+# last 3 are Rotation Vector.
+def ros_to_urx(in_pose):
+  quat = in_pose.pose.orientation
+  quat = [quat.x, quat.y, quat.z, quat.w]
+  r = R.from_quat(quat)
+  rvec = r.as_rotvec()
+  pos = in_pose.pose.position
+  out_pose = [pos.x, pos.y, pos.z, rvec[0], rvec[1], rvec[2]]
+  return out_pose
+
 def transform_cam_wrt_base(pcd):
 
   # Updated on 30 March 2023 by Victor Wu.
@@ -914,8 +926,8 @@ if __name__ == "__main__":
     robot.movej(home2j, 0.4, 0.4, wait=True)
     time.sleep(0.2)
 
-    # robot.set_tcp((0, 0, 0, 0, 0, 0))
-    # time.sleep(0.3)
+    robot.set_tcp((0, 0, 0, 0, 0, 0))
+    time.sleep(0.3)
 
     # find the ArUCo marker
     marker_pose = getMarkerPose()
@@ -933,6 +945,17 @@ if __name__ == "__main__":
     # Use the marker_pose to set the Depth Camera Pose
     camera_pose = setDepthCameraPose(marker_pose)
     pub_campose.publish(camera_pose)
+    # convert ROS pose to URx pose
+    camera_pose = ros_to_urx(camera_pose)
+
+    print(camera_pose)
+
+    # The relative position of the depth_optical_frame from wrist_3_link is
+    # [-0.0175, -0.035, 0.20245]
+    camera_tcp = [-0.0175, -0.035, 0.20245, 0.0, 0.0, 0.0]
+    robot.set_tcp(camera_tcp)
+    time.sleep(0.2)
+    robot.movel(camera_pose, 0.1, 0.1, wait=True)
     '''
     if not received_ros_cloud is None:
       received_open3d_cloud = orh.rospc_to_o3dpc(received_ros_cloud)
