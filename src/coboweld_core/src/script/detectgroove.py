@@ -219,24 +219,62 @@ def pose_estimation(frame, aruco_dict_type, matrix_coefficients, distortion_coef
   return aruco_pose
 
 def getMarkerPose():
+  # get the colour image from camera
   image = rospy.wait_for_message('/d435/color/image_raw', Image, timeout=10)
   global cv_image
+  p_listener = tf.TransformListener()
   try:
     cv_image = bridge.imgmsg_to_cv2(image, "bgr8")
+    # Estimate the ArUCo marker pose
     pose = pose_estimation(
                 cv_image,
                 ARUCO_DICT[aruco_type], 
                 intrinsic_camera, 
                 distortion
               )
-    # rospy.Publisher('/ArUCo', PoseStamped, queue_size=1)
+    try:
+      now = rospy.Time.now()
+      # Wait for transform to world
+      p_listener.waitForTransform("world", "/d435_color_optical_frame", now, rospy.Duration(4.0))
+      # Do the actual transform
+      pose = p_listener.transformPose("world", pose)
+    except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+      print("tf error!")
   except ChildProcessError as e:
     print(e)
   return pose
 
+def setDepthCameraPose(marker_pose):
+  camPose = PoseStamped()
+  # Extract the Z-axis from the orientation
+  quat = marker_pose.pose.orientation
+  quat = [quat.x, quat.y, quat.z, quat.w]
+  r = R.from_quat(quat)
+  matrix = r.as_matrix()
+  # Z-axis is the the 3rd column of the rotation matrix
+  z_axis = matrix[:, 2]
+
+  # Same frame_id and same orientation
+  camPose.header.frame_id = marker_pose.header.frame_id
+  camPose.pose.orientation = marker_pose.pose.orientation
+
+  # Find the original position first
+  posit = marker_pose.pose.position
+  posit = [posit.x, posit.y, posit.z]
+  # The position is then shifted towards the camera by 0.3m (300mm)
+  camPosit = posit - (z_axis * 0.3)
+  camPose.pose.position.x = camPosit[0]
+  camPose.pose.position.y = camPosit[1]
+  camPose.pose.position.z = camPosit[2]
+
+  camPose.header.stamp = rospy.Time.now()
+
+  return camPose
+
 def transform_cam_wrt_base(pcd):
 
   # Updated on 30 March 2023 by Victor Wu.
+  # Cannot use tf.transformPointCloud because pcd is not a ROS pointcloud2!
   try:
     now = rospy.Time.now()
     listener.waitForTransform("/base", "/d435_depth_optical_frame", now, rospy.Duration(4.0))
@@ -638,7 +676,8 @@ def find_orientation(path):
 
   # Construct the Approach point
   # path[0] is the position of the first point
-  # path[0] - init_pos takes the approach from first point by init_pos in Z direction
+  # path[0] - init_pos takes the approach from first point by init_pos 
+  # in negative Z direction, because the minus operator.
   approach = path[0] - init_pos
   approach = np.hstack((approach, first_rotvec))
 
@@ -836,8 +875,7 @@ if __name__ == "__main__":
   pub_path = rospy.Publisher("path", PointCloud2, queue_size=1)
   pub_poses = rospy.Publisher('poses', PoseArray, queue_size=1)
   pub_pose = rospy.Publisher('/ArUCo', PoseStamped, queue_size=1)
-  pub_marker = rospy.Publisher('/Marker', PoseStamped, queue_size=1)
-# pub_neighbours = rospy.Publisher("neighbours", PointCloud2, queue_size=1)
+  pub_campose = rospy.Publisher("campose", PoseStamped, queue_size=1)
 
   aruco_type = "DICT_5X5_100"
 
@@ -876,21 +914,25 @@ if __name__ == "__main__":
     robot.movej(home2j, 0.4, 0.4, wait=True)
     time.sleep(0.2)
 
-    # find the ArUCo marker
-    marker_pose = getMarkerPose()
-    pub_pose.publish(marker_pose)
-
-    # robot.movej(startchs1j, 0.4, 0.4, wait=True)
-
-
     # robot.set_tcp((0, 0, 0, 0, 0, 0))
     # time.sleep(0.3)
+
+    # find the ArUCo marker
+    marker_pose = getMarkerPose()
+    # print('marker_pose', marker_pose)
+    pub_pose.publish(marker_pose) # Visualize marker pose in RViz
+
+    # robot.movej(startchs1j, 0.4, 0.4, wait=True)
 
     # move the depth camera to somewhere near the ArUCo marker.
     # Since the Marker is 45mm square, the centre is about 22.5mm away
     # from the groove edge. Assuming the groove is about 15mm wide, so
     # the d435_depth_optical_frame should be about 30mm below the marker.
     # It should also be 300mm away from the groove, along the Z-axis.
+
+    # Use the marker_pose to set the Depth Camera Pose
+    camera_pose = setDepthCameraPose(marker_pose)
+    pub_campose.publish(camera_pose)
     '''
     if not received_ros_cloud is None:
       received_open3d_cloud = orh.rospc_to_o3dpc(received_ros_cloud)

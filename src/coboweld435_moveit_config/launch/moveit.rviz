@@ -26,7 +26,7 @@ Panels:
   - Class: rviz/Time
     Name: Time
     SyncMode: 0
-    SyncSource: Raw PC
+    SyncSource: Camera
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -474,10 +474,11 @@ Visualization Manager:
         MotionPlanning: true
         Path: true
         Path poses: true
-        Raw PC: true
+        Raw PC: false
         Selected: true
         TF: true
         Value: true
+        camPose: true
       Zoom Factor: 1
     - Alpha: 1
       Autocompute Intensity Bounds: true
@@ -652,6 +653,22 @@ Visualization Manager:
       Topic: /ArUCo
       Unreliable: false
       Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz/Pose
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: camPose
+      Queue Size: 10
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Arrow
+      Topic: /campose
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -680,7 +697,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.0452731847763062
+      Distance: 1.8539159297943115
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -688,17 +705,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.5693937540054321
-        Y: -0.6248756051063538
-        Z: 0.5082470774650574
+        X: 0.2954438030719757
+        Y: -0.4598208963871002
+        Z: 0.26775071024894714
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: -0.09520287066698074
+      Pitch: 0.5497971773147583
       Target Frame: <Fixed Frame>
-      Yaw: 1.3002586364746094
+      Yaw: 0.730255126953125
     Saved: ~
 Window Geometry:
   Camera:
@@ -722,5 +739,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1440
-  X: 269
-  Y: 121
+  X: 306
+  Y: 138
