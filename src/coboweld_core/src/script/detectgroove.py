@@ -244,14 +244,25 @@ def getMarkerPose():
     print(e)
   return pose
 
+# The input, marker_pose, is a ros pose with time stamp and frame 'world'
+# this function will transform the pose to one suitable for the
+# wrist_3_frame to use without the need to set the tcp for urx.
+# This function will also publish the pose in RViz
+# It will return a URx pose for move
 def setDepthCameraPose(marker_pose):
   camPose = PoseStamped()
+  tcp_pose = PoseStamped()
+  # d_listener = tf.TransformListener()
   # Extract the Z-axis from the orientation
   quat = marker_pose.pose.orientation
   quat = [quat.x, quat.y, quat.z, quat.w]
   r = R.from_quat(quat)
   matrix = r.as_matrix()
-  # Z-axis is the the 3rd column of the rotation matrix
+  # X-axix is the 1st column of the rotation matrix
+  x_axis = matrix[:, 0]
+  # Y-axis is the 2nd column of the rotation matrix
+  y_axis = matrix[:, 1]
+  # Z-axis is the 3rd column of the rotation matrix
   z_axis = matrix[:, 2]
 
   # Same frame_id and same orientation
@@ -261,26 +272,79 @@ def setDepthCameraPose(marker_pose):
   # Find the original position first
   posit = marker_pose.pose.position
   posit = [posit.x, posit.y, posit.z]
+
+  # The position for the depth_optical_frame
   # The position is then shifted towards the camera by 0.3m (300mm)
-  camPosit = posit - (z_axis * 0.3)
+  # It should also be about 30mm (or 0.03m) below, that is in +ve Y-axis
+  camPosit = posit + (y_axis * 0.03)
+  camPosit = camPosit - (z_axis * 0.3)
+
   camPose.pose.position.x = camPosit[0]
   camPose.pose.position.y = camPosit[1]
   camPose.pose.position.z = camPosit[2]
-
   camPose.header.stamp = rospy.Time.now()
 
-  return camPose
+  # The orientation will not change.
+  pub_campose.publish(camPose)
+
+  ''''''
+  # Then workout the position for the wrist_3_link (tcp)
+  # The relative position of the depth_optical_frame from wrist_3_link is
+  # [-0.0175, -0.035, 0.20245]
+  tcpPosit = camPosit + (x_axis * 0.0175)
+  tcpPosit = tcpPosit + (y_axis * 0.035)
+  tcpPosit = tcpPosit - (z_axis * 0.20245)
+
+  # Construct the tcp pose
+  # Same frame_id and same orientation
+  tcp_pose.header.frame_id = marker_pose.header.frame_id
+  tcp_pose.header.stamp = rospy.Time.now()
+  tcp_pose.pose.orientation = marker_pose.pose.orientation
+  tcp_pose.pose.position.x = tcpPosit[0]
+  tcp_pose.pose.position.y = tcpPosit[1]
+  tcp_pose.pose.position.z = tcpPosit[2]
+
+  pub_tcpPose.publish(tcp_pose)
+  
+  # Construct the URx pose
+  rotvec = r.as_rotvec()
+  tcpPose = [tcpPosit[0],tcpPosit[1], tcpPosit[2], rotvec[0], rotvec[1], rotvec[2]]
+  
+  return tcpPose
 
 # The in_pose is a ROS PoseStamped
 # The out_pose is a URx pose or UR pose, ie first 3 are position,
 # last 3 are Rotation Vector.
 def ros_to_urx(in_pose):
+  # position is the same
+  pos = in_pose.pose.position
+  # orientation change from quaternion to rotation vector
   quat = in_pose.pose.orientation
   quat = [quat.x, quat.y, quat.z, quat.w]
   r = R.from_quat(quat)
   rvec = r.as_rotvec()
-  pos = in_pose.pose.position
+  print(rvec)
   out_pose = [pos.x, pos.y, pos.z, rvec[0], rvec[1], rvec[2]]
+  print(out_pose)
+  return out_pose
+
+def ros_to_hom(in_pose):
+  pos = in_pose.pose.position
+  pos = [pos.x, pos.y, pos.z]
+  quat = in_pose.pose.orientation
+  quat = [quat.x, quat.y, quat.z, quat.w]
+  r = R.from_quat(quat)
+  out_pose = np.vstack((np.hstack((r.as_matrix(), np.vstack((pos))
+                                  )
+                                 ),
+                        [0, 0, 0, 1]
+                       )
+                      )
+  return out_pose
+
+def hom_to_ros(in_pose):
+  out_pose = PoseStamped()
+
   return out_pose
 
 def transform_cam_wrt_base(pcd):
@@ -867,6 +931,7 @@ if __name__ == "__main__":
 
   listener = tf.TransformListener()
   aruco_listener = tf.TransformListener()
+  d_listener = tf.TransformListener()
 
   # Must have __init__(self) function for a class, similar to a C++ class constructor.
 
@@ -888,6 +953,7 @@ if __name__ == "__main__":
   pub_poses = rospy.Publisher('poses', PoseArray, queue_size=1)
   pub_pose = rospy.Publisher('/ArUCo', PoseStamped, queue_size=1)
   pub_campose = rospy.Publisher("campose", PoseStamped, queue_size=1)
+  pub_tcpPose = rospy.Publisher('tcp_pose', PoseStamped, queue_size=1)
 
   aruco_type = "DICT_5X5_100"
 
@@ -900,7 +966,6 @@ if __name__ == "__main__":
   
   # Do not start URx when testing software
   
-  robot = urx.Robot('192.168.0.103')
 
   # home1 is when it faces to the right
   home1j = [0.0001, -1.1454, -2.7596, 0.7290, 0.0000, 0.0000]
@@ -919,6 +984,8 @@ if __name__ == "__main__":
   # print('intrinsic_camera: ', intrinsic_camera)
   # print('distortion: ', distortion)
 
+  robot = urx.Robot('192.168.0.103')
+
   # first_round = True
   while not rospy.is_shutdown():
 
@@ -926,10 +993,10 @@ if __name__ == "__main__":
     robot.movej(home2j, 0.4, 0.4, wait=True)
     time.sleep(0.2)
 
-    robot.set_tcp((0, 0, 0, 0, 0, 0))
-    time.sleep(0.3)
+    # robot.set_tcp((0, 0, 0, 0, 0, 0))
+    # time.sleep(0.3)
 
-    # find the ArUCo marker
+    # find the ArUCo marker, in the 'world' frame
     marker_pose = getMarkerPose()
     # print('marker_pose', marker_pose)
     pub_pose.publish(marker_pose) # Visualize marker pose in RViz
@@ -942,20 +1009,53 @@ if __name__ == "__main__":
     # the d435_depth_optical_frame should be about 30mm below the marker.
     # It should also be 300mm away from the groove, along the Z-axis.
 
+    # d_listener.waitForTransform('wrist_3_link', 'd435_depth_optical_frame', 
+    #                             rospy.Time(0), rospy.Duration(4.0))
+    
     # Use the marker_pose to set the Depth Camera Pose
-    camera_pose = setDepthCameraPose(marker_pose)
+    # Do the transformation to the wrist_3_link as well to avoid 
+    # converting to and from ros pose and urx pose
+    tcpPose = setDepthCameraPose(marker_pose)
+    print(tcpPose)
+    robot.movel(tcpPose, 0.1, 0.1, wait=True)
+
+    '''
+    # camera_tcp = [-0.0175, -0.035, 0.20245, 0.0, 0.0, 0.0]
+
+    
+    # Find camera pose, that is depth_optical_frame with respect to wrist_3_link
+    now = rospy.Time.now()
+    d_listener.waitForTransform('wrist_3_link', 'd435_depth_optical_frame', 
+                                now, rospy.Duration(4.0))
+    (trans, rot) = d_listener.lookupTransform(
+                   'wrist_3_link', 'd435_depth_optical_frame', now)
+    
+    # convert the transform into a 4 x 4 homogeneous transformation
+    r = R.from_quat(rot)
+    transformation = np.vstack((np.hstack((r.as_matrix(), np.vstack((trans))
+                                          )
+                                         ),
+                                [0, 0, 0, 1]
+                               )
+                              )
+    
+    # convert the camera_pose into a 4 x 4 homogeneous pose
+    cam_pose_hom = ros_to_hom(camera_pose)
+    cam_pose_hom = transformation * cam_pose_hom
+
+    camera_pose = hom_to_ros(cam_pose_hom)
+
+    # camera_pose = d_listener.transformPose('wrist_3_link', camera_pose)
     pub_campose.publish(camera_pose)
+    
     # convert ROS pose to URx pose
     camera_pose = ros_to_urx(camera_pose)
-
-    print(camera_pose)
-
-    # The relative position of the depth_optical_frame from wrist_3_link is
-    # [-0.0175, -0.035, 0.20245]
-    camera_tcp = [-0.0175, -0.035, 0.20245, 0.0, 0.0, 0.0]
+    # print(camera_pose)
+    
     robot.set_tcp(camera_tcp)
-    time.sleep(0.2)
+    time.sleep(4)
     robot.movel(camera_pose, 0.1, 0.1, wait=True)
+    '''
     '''
     if not received_ros_cloud is None:
       received_open3d_cloud = orh.rospc_to_o3dpc(received_ros_cloud)
