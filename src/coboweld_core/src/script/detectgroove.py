@@ -107,6 +107,13 @@ percentage = 0.98
 
 execute = False
 
+#########################################################
+#                                                       #
+#                     ArUCo Marker                      #
+#                                                       #
+#########################################################
+
+
 # This is for conversion from Open3d point cloud to ROS point cloud
 # Note: Add `.ravel()` to the end of line 261 in the `open3d_ros_helper.py` before it can work
 # Refer to README.md 
@@ -363,6 +370,11 @@ def transform_cam_wrt_base(pcd):
 
   return pcd_copy
 
+#########################################################
+#                                                       #
+#                    Feature detection                  #
+#                                                       #
+#########################################################
 def normalize_feature(feature_value_list):
     
     max_value = feature_value_list.max()
@@ -460,6 +472,11 @@ def cluster_groove_from_point_cloud(pcd):
 
     return groove1
 
+#########################################################
+#                                                       #
+#                    Line extraction                    #
+#                                                       #
+#########################################################
 def thin_line(points, point_cloud_thickness=thickness, iterations=1, sample_points=0):
 
     if sample_points != 0:
@@ -590,6 +607,11 @@ def sort_points(points, regression_lines, sorted_point_distance=0.01):
 
     return np.array(sort_points_right)
 
+#########################################################
+#                                                       #
+#                    Path processing                    #
+#                                                       #
+#########################################################
 # To generate a welding path for the torch. This is only a path and should not be called a trajectory!
 def generate_path(groove):
 
@@ -763,6 +785,40 @@ def find_orientation(path):
 
   return ur_poses
 
+#########################################################
+#                                                       #
+#                 Point cloud processing                #
+#                                                       #
+#########################################################
+def depthCamPose(centre, x, y, z):
+  depthCamPose = []
+  hypot = math.sqrt(x**2 + y**2 + z**2) # hypotenuse
+  sin = y / hypot
+  cos = x / hypot
+  rx = [[ 1.0,  0.0,  0.0],
+        [ 0.0,  cos, -sin],
+        [ 0.0,  sin,  cos]]
+  ry = [[ cos,  0.0,  sin],
+        [ 0.0,  1.0,  0.0],
+        [-sin,  0.0,  cos]]
+  rz = [[ cos, -sin,  0.0],
+        [ sin,  cos,  0.0],
+        [ 0.0,  0.0,  1.0]]
+  r = R.from_rotvec(centre[3:])
+  matrix = r.as_matrix
+  outR = matrix * rz * ry * rx
+  outRvec = outR.as_rotvec()
+  outPos = [centre[0] + x, centre[1] + y, centre[2] + z]
+  depthCamPose = np.hstack((outPos, outRvec))
+
+  
+  return depthCamPose
+
+#########################################################
+#                                                       #
+#                        Work flow                      #
+#                                                       #
+#########################################################
 def detect_groove_workflow(pcd):
 
   original_pcd = pcd
