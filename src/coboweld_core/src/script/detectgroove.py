@@ -162,11 +162,25 @@ def getColourCamInfo():
 
 bridge = CvBridge()
 
+def urxPose_to_rosPose(inPose, inFrame):
+  outPose = PoseStamped()
+  outPose.header.frame_id = inFrame
+  outPose.pose.position.x = inPose[0]
+  outPose.pose.position.y = inPose[1]
+  outPose.pose.position.z = inPose[2]
+  r = R.from_rotvec(inPose[3:])
+  orient = r.as_quat()
+  outPose.pose.orientation.x = orient[0]
+  outPose.pose.orientation.y = orient[1]
+  outPose.pose.orientation.z = orient[2]
+  outPose.pose.orientation.w = orient[3]
+  outPose.header.stamp = rospy.Time.now()
+  return outPose
+
 # Aruco Marker pose estimation
 def pose_estimation(frame, aruco_dict_type, matrix_coefficients, distortion_coefficients):
 
   # print('pose_estimation.')
-  aruco_pose = PoseStamped()
   gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
   cv2.aruco_dict = cv2.aruco.Dictionary_get(aruco_dict_type)
   parameters = cv2.aruco.DetectorParameters_create()
@@ -179,50 +193,35 @@ def pose_estimation(frame, aruco_dict_type, matrix_coefficients, distortion_coef
 
   if len(corners) > 0:
     for i in range(0, len(ids)):
-        
       rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(
           corners[i], 
-          0.0447, # the marker is 45mm square
+          0.0443, # the marker is 45mm square
           matrix_coefficients,
           distortion_coefficients
         )
-      tvec = tvec[0,0]
-      # print('tvec: ', tvec.shape)
-      rvec = rvec[0,0]
-      # rvec = rvec * [-pi, 0.0, 0.0]
-      # print('rvec: ', rvec.shape)
-      
-      # The marker is pointing towards the camera
-      # It is necessary to use it to point away from the camera
-      # This can be done by rotating about the X-axis
-      r = R.from_rotvec(rvec) # get the r from rotation vector
-      ar_mat = r.as_matrix()  # get the rotation matrix from r
-      # multiply it with this matrix to rotate it about X-axis
-      ar_mat = ar_mat * [[1, 0, 0],[0, -1, 0],[0, 0, -1]]
 
-      ar_r = R.from_matrix(ar_mat)  # get a new r from the new matrix
-      ar_quat = ar_r.as_quat()      # get the quaternion for publishing
+    tvec = tvec[0,0]
+    # print('tvec: ', tvec.shape)
+    rvec = rvec[0,0]
+    # rvec = rvec * [-pi, 0.0, 0.0]
+    # print('rvec: ', rvec.shape)
+    
+    # The marker is pointing towards the camera
+    # It is necessary for it to point away from the camera
+    # This can be done by rotating about the X-axis by pi
+    r = R.from_rotvec(rvec) # get the r from rotation vector
+    ar_mat = r.as_matrix()  # get the rotation matrix from r
+    # multiply it with this matrix to rotate it about X-axis
+    ar_mat = ar_mat * [[1, 0, 0],[0, -1, 0],[0, 0, -1]]
 
-      # Construct a pose to be published in RViz
-      # A pose, to be published in RViz, consists of:
-      #  (a) position x, y, z, 
-      #  (b) orientation in quaternion x, y, z, w
-      #
-      # position
-      aruco_pose.pose.position.x = tvec[0]
-      aruco_pose.pose.position.y = tvec[1]
-      aruco_pose.pose.position.z = tvec[2]
-      # orientation
-      aruco_pose.pose.orientation.x = ar_quat[0]
-      aruco_pose.pose.orientation.y = ar_quat[1]
-      aruco_pose.pose.orientation.z = ar_quat[2]
-      aruco_pose.pose.orientation.w = ar_quat[3]
+    ar_r = R.from_matrix(ar_mat)  # get a new r from the new matrix
+    ar_rvec = ar_r.as_rotvec()    # get the new rotvec
 
-      aruco_pose.header.frame_id = 'd435_color_optical_frame'
-      aruco_pose.header.stamp = rospy.Time.now()
-      # pub_pose.publish(aruco_pose)
+    out_pose = np.hstack((tvec[:3], ar_rvec))
 
-  return aruco_pose
+    pub_pose.publish(urxPose_to_rosPose(out_pose, 'd435_color_optical_frame'))
+
+  return out_pose # URx pose
 
 def getMarkerPose():
   # get the colour image from camera
@@ -232,40 +231,41 @@ def getMarkerPose():
   p_listener = tf.TransformListener()
   try:
     cv_image = bridge.imgmsg_to_cv2(image, "bgr8")
-    # Estimate the ArUCo marker pose
-    pose = pose_estimation(
+    # Estimate the ArUCo marker pose, URx pose
+    urx_pose = pose_estimation(
                 cv_image,
                 ARUCO_DICT[aruco_type], 
                 intrinsic_camera, 
                 distortion
               )
     # print('pose estimated.')
+    ros_pose = urxPose_to_rosPose(urx_pose, 'd435_color_optical_frame')
     try:
       now = rospy.Time.now()
       # Wait for transform to base
       p_listener.waitForTransform("base", "/d435_color_optical_frame", now, rospy.Duration(4.0))
       # Do the actual transform
-      pose = p_listener.transformPose("base", pose)
+      pose = p_listener.transformPose("base", ros_pose)
     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
       print("tf error!")
   except ChildProcessError as e:
     print(e)
-  return pose
+  return pose # ROS pose
 
-# The input, marker_pose, is a ros pose with time stamp and frame 'world'
+# The input, marker_pose, is a ROS pose with time stamp and frame 'base'.
+# Outputs target for depth camera, in URx format and publish the pose in RViz.
+#
 # this function will transform the pose to one suitable for the
 # wrist_3_frame to use without the need to set the tcp for urx.
 # This function will also publish the pose in RViz
 # It will return a URx pose for move
-def setDepthCameraPose(marker_pose):
+#
+def setDepthCameraPose(marker_pose, x, y, z):
   # print('setDepthCameraPose.')
-  camPose = PoseStamped()
-  tcp_pose = PoseStamped()
-  # d_listener = tf.TransformListener()
-  # Extract the Z-axis from the orientation
   quat = marker_pose.pose.orientation
   quat = [quat.x, quat.y, quat.z, quat.w]
   r = R.from_quat(quat)
+  rotvec = r.as_rotvec()
   matrix = r.as_matrix()
   # X-axis is the 1st column of the rotation matrix
   x_axis = matrix[:, 0]
@@ -274,51 +274,73 @@ def setDepthCameraPose(marker_pose):
   # Z-axis is the 3rd column of the rotation matrix
   z_axis = matrix[:, 2]
 
-  # Same frame_id and same orientation
-  camPose.header.frame_id = marker_pose.header.frame_id
-  camPose.pose.orientation = marker_pose.pose.orientation
-
   # Find the original position first
-  posit = marker_pose.pose.position
-  posit = [posit.x, posit.y, posit.z]
+  posit = [marker_pose.pose.position.x,
+           marker_pose.pose.position.y,
+           marker_pose.pose.position.z]
 
-  # The position for the depth_optical_frame
-  # The position is then shifted towards the camera by 0.3m (300mm)
-  # It should also be about 30mm (or 0.03m) below, that is in +ve Y-axis
-  camPosit = posit + (y_axis * 0.03)
-  camPosit = camPosit - (z_axis * 0.3)
+  # Find the out pose position
+  outPosit = posit + (x_axis * x)
+  outPosit = outPosit + (y_axis * y)
+  outPosit = outPosit - (z_axis * z)
 
-  camPose.pose.position.x = camPosit[0]
-  camPose.pose.position.y = camPosit[1]
-  camPose.pose.position.z = camPosit[2]
-  camPose.header.stamp = rospy.Time.now()
+  outPose = [outPosit[0], outPosit[1], outPosit[2], rotvec[0], rotvec[1], rotvec[2]]
 
-  # The orientation will not change.
-  # print('publish camera pose.')
-  pub_campose.publish(camPose)
+  return outPose
 
-  # Then workout the position for the wrist_3_link (tcp)
-  # The relative position of the depth_optical_frame from wrist_3_link is
-  # [-0.0175, -0.035, 0.20245]
-  tcpPosit = camPosit + (x_axis * 0.0175)
-  tcpPosit = tcpPosit + (y_axis * 0.035)
-  tcpPosit = tcpPosit - (z_axis * 0.20245)
+# Given the target frame, say the camera frame and its pose in URx format
+# return the pose in URx of tcp (wrist_3_link) and publish it in RViz.
+# This is done by requesting the transformation from tf but then apply it
+# in the reverse direction. This can only be done by hand coding it, not by 
+# applying tf.
+def setTcpPose(sourceFrame, inPose):
+  # convert the inPose into ROS pose first
+  inROSpose = PoseStamped()
+  inROSpose.pose.position.x = inPose[0]
+  inROSpose.pose.position.y = inPose[1]
+  inROSpose.pose.position.z = inPose[2]
+  rotvec = inPose[3:]
+  r = R.from_rotvec(rotvec)
+  quat = r.as_quat()
+  rotvec = r.as_rotvec()
+  matrix = r.as_matrix()
+  # X-axis is the 1st column of the rotation matrix
+  x_axis = matrix[:, 0]
+  # Y-axis is the 2nd column of the rotation matrix
+  y_axis = matrix[:, 1]
+  # Z-axis is the 3rd column of the rotation matrix
+  z_axis = matrix[:, 2]
+  inROSpose.pose.orientation.x = quat[0]
+  inROSpose.pose.orientation.y = quat[1]
+  inROSpose.pose.orientation.z = quat[2]
+  inROSpose.pose.orientation.w = quat[3]
+  inROSpose.header.frame_id = 'base'
+  inROSpose.header.stamp = rospy.Time.now()
+  pub_campose.publish(inROSpose)
+  now = rospy.Time.now()
+  d_listener.waitForTransform(sourceFrame, 'wrist_3_link', 
+                               now, rospy.Duration(4.0))
+  (trans, rot) = d_listener.lookupTransform(sourceFrame, 'wrist_3_link', now)
+  
+#  print('trans: ', trans)
+#  print('rot: ', rot)
+#  tcpROSpose = PoseStamped()
 
-  # Construct the tcp pose
-  # Same frame_id and same orientation
-  tcp_pose.header.frame_id = marker_pose.header.frame_id
-  tcp_pose.header.stamp = rospy.Time.now()
-  tcp_pose.pose.orientation = marker_pose.pose.orientation
-  tcp_pose.pose.position.x = tcpPosit[0]
-  tcp_pose.pose.position.y = tcpPosit[1]
-  tcp_pose.pose.position.z = tcpPosit[2]
+  tcpROSpose = PoseStamped()
+  inPosit = [inROSpose.pose.position.x,
+             inROSpose.pose.position.y,
+             inROSpose.pose.position.z]
+  
+  outPosit = inPosit + (x_axis * trans[0])
+  outPosit = outPosit + (y_axis * trans[1])
+  outPosit = outPosit + (z_axis * trans[2])
+
+  tcpPose = [outPosit[0], outPosit[1], outPosit[2], rotvec[0], rotvec[1], rotvec[2]]
 
   # print('publish tcp pose.')
-  pub_tcpPose.publish(tcp_pose)
+  tcpROSpose = urxPose_to_rosPose(tcpPose, 'base')
+  pub_tcpPose.publish(tcpROSpose)
   
-  # Construct the URx pose
-  rotvec = r.as_rotvec()
-  tcpPose = [tcpPosit[0],tcpPosit[1], tcpPosit[2], rotvec[0], rotvec[1], rotvec[2]]
   
   return tcpPose
 
@@ -684,6 +706,42 @@ def publish_path_poses(poses):
   PoseList_torch_rviz.header.stamp = rospy.Time.now()
   pub_poses.publish(PoseList_torch_rviz)
 
+def publish_camposes(poses):
+  camposelist = PoseArray()
+  for pose in poses:
+    r = R.from_rotvec(pose[3:])
+    orientation = r.as_quat()
+    campose = Pose()
+    campose.position.x = pose[0]
+    campose.position.y = pose[1]
+    campose.position.z = pose[2]
+    campose.orientation.x = orientation[0]
+    campose.orientation.y = orientation[1]
+    campose.orientation.z = orientation[2]
+    campose.orientation.w = orientation[3]
+    camposelist.poses.append(campose)
+  camposelist.header.frame_id = 'base'
+  camposelist.header.stamp = rospy.Time.now()
+  pub_camposes.publish(camposelist)
+
+def publish_tcpPoses(poses):
+  tcpPoselist = PoseArray()
+  for pose in poses:
+    r = R.from_rotvec(pose[3:])
+    orientation = r.as_quat()
+    tcpPose = Pose()
+    tcpPose.position.x = pose[0]
+    tcpPose.position.y = pose[1]
+    tcpPose.position.z = pose[2]
+    tcpPose.orientation.x = orientation[0]
+    tcpPose.orientation.y = orientation[1]
+    tcpPose.orientation.z = orientation[2]
+    tcpPose.orientation.w = orientation[3]
+    tcpPoselist.poses.append(tcpPose)
+  tcpPoselist.header.frame_id = 'base'
+  tcpPoselist.header.stamp = rospy.Time.now()
+  pub_tcpPoses.publish(tcpPoselist)
+
 # After a welding path is generated, it is necessary to find the orientation of the 
 # welding torch before a pose for each point can be sent to the robot for execution.
 # groove is the detected groove with respect to the camera frame.
@@ -790,7 +848,29 @@ def find_orientation(path):
 #                 Point cloud processing                #
 #                                                       #
 #########################################################
-def depthCamPose(centre, x, y, z):
+'''
+# marker_pose is the pose of the ArUCo marker in ROS format
+def setSidePose(marker_pose, x, y, z):
+  # First, find the target from marker_pose
+  # the target is about 30mm below the marker_pose
+  target = [marker_pose.pose.position.x,
+            marker_pose.pose.position.y + 0.03,
+            marker_pose.pose.position.z - 0.3] 
+  
+  quat = marker_pose.pose.orientation
+  quat = [quat.x, quat.y, quat.z, quat.w]
+  r = R.from_quat(quat)
+  rotvec = r.as_rotvec()
+  matrix = r.as_matrix()
+  # X-axis is the 1st column of the rotation matrix
+  x_axis = matrix[:, 0]
+  # Y-axis is the 2nd column of the rotation matrix
+  y_axis = matrix[:, 1]
+  # Z-axis is the 3rd column of the rotation matrix
+  z_axis = matrix[:, 2]
+
+  outPos = [targetX + x, targetY + y, targetZ - z]
+
   depthCamPose = []
   hypot = math.sqrt(x**2 + y**2 + z**2) # hypotenuse
   sin = y / hypot
@@ -804,16 +884,33 @@ def depthCamPose(centre, x, y, z):
   rz = [[ cos, -sin,  0.0],
         [ sin,  cos,  0.0],
         [ 0.0,  0.0,  1.0]]
+  print('centre: ', centre)
   r = R.from_rotvec(centre[3:])
-  matrix = r.as_matrix
-  outR = matrix * rz * ry * rx
-  outRvec = outR.as_rotvec()
-  outPos = [centre[0] + x, centre[1] + y, centre[2] + z]
+  matrix = r.as_matrix()
+  print('matrix: ', matrix)
+  fst_mat = np.matmul(rz, ry)
+  snd_mat = np.matmul(fst_mat, rx)
+  outR = np.matmul(matrix, snd_mat)
+  # outR = np.matmul(np.matmul(np.matmul(matrix, rz), ry), rx)
+  out_r = R.from_matrix(outR)
+  outRvec = out_r.as_rotvec()
+  outOrient = out_r.as_quat()
   depthCamPose = np.hstack((outPos, outRvec))
-
+  ''''''
+  camPose = PoseStamped()
+  camPose.header.frame_id = 'base'
+  camPose.pose.position.x = centre[0]
+  camPose.pose.position.y = centre[1]
+  camPose.pose.position.z = centre[2]
+  camPose.pose.orientation.x = outOrient[0]
+  camPose.pose.orientation.y = outOrient[1]
+  camPose.pose.orientation.z = outOrient[2]
+  camPose.pose.orientation.w = outOrient[3]
+  camPose.header.stamp = rospy.Time.now()
+  pub_campose.publish(camPose)
   
   return depthCamPose
-
+  '''
 #########################################################
 #                                                       #
 #                        Work flow                      #
@@ -1004,7 +1101,9 @@ if __name__ == "__main__":
   pub_poses = rospy.Publisher('poses', PoseArray, queue_size=1)
   pub_pose = rospy.Publisher('/ArUCo', PoseStamped, queue_size=1)
   pub_campose = rospy.Publisher("campose", PoseStamped, queue_size=1)
+  pub_camposes = rospy.Publisher("camposes", PoseArray, queue_size=1)
   pub_tcpPose = rospy.Publisher('tcp_pose', PoseStamped, queue_size=1)
+  pub_tcpPoses = rospy.Publisher('tcpPoses', PoseArray, queue_size=1)
 
   aruco_type = "DICT_5X5_100"
 
@@ -1049,31 +1148,80 @@ if __name__ == "__main__":
     # time.sleep(0.3)
 
     # find the ArUCo marker, in the 'world' frame
-    marker_pose = getMarkerPose()
+    marker_pose = getMarkerPose() # ROS pose
     # print('marker_pose', marker_pose)
     print('publish marker pose.')
     pub_pose.publish(marker_pose) # Visualize marker pose in RViz
-
-    # robot.movej(startchs1j, 0.4, 0.4, wait=True)
 
     # move the depth camera to somewhere near the ArUCo marker.
     # Since the Marker is 45mm square, the centre is about 22.5mm away
     # from the groove edge. Assuming the groove is about 15mm wide, so
     # the d435_depth_optical_frame should be about 30mm below the marker.
     # It should also be 300mm away from the groove, along the Z-axis.
+    # camPose in URx format.
+    #
+    # This is the CENTRE of 5 positions that the camera will capture a
+    # complete point cloud of the workpiece.
+    #
+    # camPose0 is the CENTRE
+    camPose0 = setDepthCameraPose(marker_pose,  0.00,  0.03, 0.3)
+    # print('camera pose 0: ', camPose0)
+    camPose1 = setDepthCameraPose(marker_pose, -0.05, -0.02, 0.3)
+    # print('camera pose 1: ', camPose1)
+    camPose2 = setDepthCameraPose(marker_pose,  0.05, -0.02, 0.3)
+    # print('camera pose 2: ', camPose2)
+    camPose3 = setDepthCameraPose(marker_pose,  0.05,  0.08, 0.3)
+    # print('camera pose 3: ', camPose3)
+    camPose4 = setDepthCameraPose(marker_pose, -0.05,  0.08, 0.3)
+    # print('camera pose 4: ', camPose4)
 
-    # d_listener.waitForTransform('wrist_3_link', 'd435_depth_optical_frame', 
-    #                             rospy.Time(0), rospy.Duration(4.0))
+    camPoses = [camPose0, camPose1, camPose2, camPose3, camPose4]
+    # publish_camposes(camPoses)
+
+    tcpPose0 = setTcpPose('d435_depth_optical_frame' , camPose0) # URx pose
+    # print('tcpPose0: ', tcpPose0)
+    tcpPose1 = setTcpPose('d435_depth_optical_frame' , camPose1) # URx pose
+    # print('tcpPose1: ', tcpPose1)
+    tcpPose2 = setTcpPose('d435_depth_optical_frame' , camPose2) # URx pose
+    # print('tcpPose2: ', tcpPose2)
+    tcpPose3 = setTcpPose('d435_depth_optical_frame' , camPose3) # URx pose
+    # print('tcpPose3: ', tcpPose3)
+    tcpPose4 = setTcpPose('d435_depth_optical_frame' , camPose4) # URx pose
+    # print('tcpPose4: ', tcpPose4)
+
+    tcpPoses = [tcpPose0, tcpPose1, tcpPose2, tcpPose3, tcpPose4]
+    # publish_tcpPoses(tcpPoses)
+
+    pcd = []
+    for tcppose in tcpPoses:
+      robot.movej_to_pose(tcppose, 0.4, 0.4, wait=True)
+      received_open3d_cloud = orh.rospc_to_o3dpc(received_ros_cloud)
+
+      rviz_cloud = orh.o3dpc_to_rospc(received_open3d_cloud, 
+                                      frame_id="d435_depth_optical_frame")
+      pcd.append(received_open3d_cloud)
+      pub_captured.publish(rviz_cloud)
+      # reply = input('Hit any key to continue :')
+
+    robot.movej(home2j, 0.4, 0.4, wait=True)
     
+
+
+
+
     # Use the marker_pose to set the Depth Camera Pose
     # Do the transformation to the wrist_3_link as well to avoid 
     # converting to and from ros pose and urx pose
-    tcpPose = setDepthCameraPose(marker_pose)
     # print(tcpPose)
     # robot.movel(tcpPose, 0.1, 0.1, wait=True)
-    robot.movej_to_pose(tcpPose, 0.4, 0.4, wait=True)
 
-    ''''''
+    #robot.movej_to_pose(tcpPose, 0.4, 0.4, wait=True)
+
+    ##########################################################################
+
+    # setTcpPose(marker_pose, -0.05, -0.08, -0.3)
+
+    '''
     if not received_ros_cloud is None:
       received_open3d_cloud = orh.rospc_to_o3dpc(received_ros_cloud)
 
@@ -1087,18 +1235,10 @@ if __name__ == "__main__":
       if execute:
         reply = input('Do you want to move to the Approaching Point? Y for yes: ')
         if (reply == "y"):
-          # torch_tcp = [0.0, -0.105, 0.365, 0.0, 0.0, 0.0]
-          # torch_tcp = [0.0, -0.095, 0.385, 0.0, 0.0, 0.0]
-          # robot.set_tcp(torch_tcp)
-          # pause is essential for tcp to take effect, min time is 0.1s
-          # time.sleep(0.2)
-
           # Before these poses can be used to move the welding torch
           # they must be transformed with respect to "base" FOR "torch"
-
           torchPoses = setTorchPose(ur_poses)
 
-          ''''''
           # Move to the Approach point
           robot.movel(torchPoses[0], acc=0.1, vel=0.1, wait=True)
 
@@ -1114,7 +1254,7 @@ if __name__ == "__main__":
           robot.movel(torchPoses[-1], acc=0.1, vel=0.1, wait=True)
 
           robot.movej(home1j, 0.4, 0.4, wait=True)
-          
+    '''
     reply = input('Do you want to do it again? :')
     if (reply == 'n'):
       break
