@@ -7,9 +7,6 @@ Panels:
         - /MotionPlanning1/Scene Robot1
         - /TF1/Frames1
         - /Camera1/Visibility1
-        - /AruCo Pose1
-        - /camPose1
-        - /Camera Poses1
       Splitter Ratio: 0.41448691487312317
     Tree Height: 824
   - Class: rviz/Selection
@@ -29,7 +26,7 @@ Panels:
   - Class: rviz/Time
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: Captured
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -387,8 +384,8 @@ Visualization Manager:
       Unreliable: false
       Value: false
       Visibility:
-        "": true
         AruCo Pose: true
+        Camera Poses: true
         Captured: true
         Clustered: true
         Grid: true
@@ -439,7 +436,7 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: Intensity
+      Color Transformer: RGB8
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
@@ -635,7 +632,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.4340392351150513
+      Distance: 0.7547410130500793
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -651,9 +648,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.25979700684547424
+      Pitch: 0.21979691088199615
       Target Frame: <Fixed Frame>
-      Yaw: 1.5701897144317627
+      Yaw: 1.8601866960525513
     Saved: ~
 Window Geometry:
   Camera:

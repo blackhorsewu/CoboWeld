@@ -1150,7 +1150,7 @@ if __name__ == "__main__":
     # find the ArUCo marker, in the 'world' frame
     marker_pose = getMarkerPose() # ROS pose
     # print('marker_pose', marker_pose)
-    print('publish marker pose.')
+    # print('publish marker pose.')
     pub_pose.publish(marker_pose) # Visualize marker pose in RViz
 
     # move the depth camera to somewhere near the ArUCo marker.
@@ -1166,6 +1166,7 @@ if __name__ == "__main__":
     # camPose0 is the CENTRE
     camPose0 = setDepthCameraPose(marker_pose,  0.00,  0.03, 0.3)
     # print('camera pose 0: ', camPose0)
+    '''
     camPose1 = setDepthCameraPose(marker_pose, -0.05, -0.02, 0.3)
     # print('camera pose 1: ', camPose1)
     camPose2 = setDepthCameraPose(marker_pose,  0.05, -0.02, 0.3)
@@ -1174,7 +1175,7 @@ if __name__ == "__main__":
     # print('camera pose 3: ', camPose3)
     camPose4 = setDepthCameraPose(marker_pose, -0.05,  0.08, 0.3)
     # print('camera pose 4: ', camPose4)
-
+    
     camPoses = [camPose0, camPose1, camPose2, camPose3, camPose4]
     # publish_camposes(camPoses)
 
@@ -1192,19 +1193,35 @@ if __name__ == "__main__":
     tcpPoses = [tcpPose0, tcpPose1, tcpPose2, tcpPose3, tcpPose4]
     # publish_tcpPoses(tcpPoses)
 
-    pcd = []
+    pcd = o3d.geometry.PointCloud()
+    pcds = []
     for tcppose in tcpPoses:
-      robot.movej_to_pose(tcppose, 0.4, 0.4, wait=True)
+      robot.movej_to_pose(tcppose, 0.5, 0.5, wait=True)
+      # convert the received ROS pc into Open3D pc
+
       received_open3d_cloud = orh.rospc_to_o3dpc(received_ros_cloud)
-
-      rviz_cloud = orh.o3dpc_to_rospc(received_open3d_cloud, 
-                                      frame_id="d435_depth_optical_frame")
-      pcd.append(received_open3d_cloud)
+      o3dpc = transform_cam_wrt_base(received_open3d_cloud)
+      # pcd += o3dpc
+      # pcd = pcd.voxel_down_sample(voxel_size=0.001)
+      pcds.append(o3dpc)
+      rviz_cloud = orh.o3dpc_to_rospc(o3dpc, 
+                                      frame_id='base')
+      # pcd.append(received_open3d_cloud)
       pub_captured.publish(rviz_cloud)
-      # reply = input('Hit any key to continue :')
+      reply = input('Hit "c" to continue, "t" to use this one :')
+      if reply == 't':
+        ur_poses = detect_groove_workflow(received_open3d_cloud)
+        break
+    '''
+    tcpPose0 = setTcpPose('d435_depth_optical_frame' , camPose0) # URx pose
+    robot.movej_to_pose(tcpPose0, 0.5, 0.5, wait=True)
+    '''
+    reply = input('Which pcd do you prefer: ')
+    rviz_cloud = orh.o3dpc_to_rospc(pcds[int(reply)], frame_id='base')
+    pub_captured.publish(rviz_cloud)
 
-    robot.movej(home2j, 0.4, 0.4, wait=True)
-    
+    ur_poses = detect_groove_workflow(pcds[int(reply)])
+    '''
 
 
 
@@ -1221,7 +1238,7 @@ if __name__ == "__main__":
 
     # setTcpPose(marker_pose, -0.05, -0.08, -0.3)
 
-    '''
+    ''''''
     if not received_ros_cloud is None:
       received_open3d_cloud = orh.rospc_to_o3dpc(received_ros_cloud)
 
@@ -1254,7 +1271,7 @@ if __name__ == "__main__":
           robot.movel(torchPoses[-1], acc=0.1, vel=0.1, wait=True)
 
           robot.movej(home1j, 0.4, 0.4, wait=True)
-    '''
+    
     reply = input('Do you want to do it again? :')
     if (reply == 'n'):
       break
