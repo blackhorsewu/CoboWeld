@@ -87,23 +87,30 @@ import csv
 #*************************#
 # Define Parameter values #
 #*************************#
-# 1. Feature value neighbours
-feature_neighbours = 6
+# 1. Feature value neighbours, Jeff used less than 30
+# feature_neighbours = 6
+feature_neighbours = 30
 # 2. Maximum distance between cluster neighbours
-cluster_neighbour_distance = 0.007 # m or 8mm
-# 3. Minimum cluster members
-min_cluster_memb = 6
-# 4. Point cloud thickness in thin_line
-thickness = 0.007
+# cluster_neighbour_distance = 0.007 # m or 8mm | 5 times voxel size
+cluster_neighbour_distance = 0.025
+# 3. Minimum cluster members | 20
+# min_cluster_memb = 6
+min_cluster_memb = 20
+# 4. Point cloud thickness in thin_line | 0.5
+# thickness = 0.007
+thickness = 0.05
 # 5. Voxel size
-voxelsize = 0.001 # m or 1mm
+# voxelsize = 0.001 # m or 1mm | 0.005 or 5mm
+voxelsize = 0.004
 # 6. Normal estimation neighbourhood
 # radius
-my_radius = 0.01 # m or 12mm
-# maximum nearest neighbours
-maxnn = 350
-# 7. Delete percentage of feature values
-percentage = 0.98
+my_radius = 0.01 # m or 12mm | 0.01
+# maximum nearest neighbours | 30
+# maxnn = 350
+maxnn = 30
+# 7. Delete percentage of feature values | 0.95
+# percentage = 0.98
+percentage = 0.95
 
 execute = False
 
