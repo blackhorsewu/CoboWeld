@@ -89,19 +89,19 @@ import csv
 #*************************#
 # 1. Feature value neighbours, Jeff used less than 30
 # feature_neighbours = 6
-feature_neighbours = 30
+feature_neighbours = 38
 # 2. Maximum distance between cluster neighbours
 # cluster_neighbour_distance = 0.007 # m or 8mm | 5 times voxel size
-cluster_neighbour_distance = 0.025
+cluster_neighbour_distance = 0.03
 # 3. Minimum cluster members | 20
 # min_cluster_memb = 6
 min_cluster_memb = 20
 # 4. Point cloud thickness in thin_line | 0.5
 # thickness = 0.007
-thickness = 0.05
+thickness = 0.045
 # 5. Voxel size
 # voxelsize = 0.001 # m or 1mm | 0.005 or 5mm
-voxelsize = 0.004
+voxelsize = 0.003
 # 6. Normal estimation neighbourhood
 # radius
 my_radius = 0.01 # m or 12mm | 0.01
