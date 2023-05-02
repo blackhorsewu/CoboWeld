@@ -102,7 +102,7 @@ RobotWeld depends on:
 
 # Universal Robots ROS Driver
 
-When try to launch the `setup455.launch`, it complaint that it is always waiting ro the `scaled_vel_joint_traj_controller` and cannot connect to the `Action client`, with the following errors:
+When try to launch the `setup455.launch`, it complaint that it is always waiting for the `scaled_vel_joint_traj_controller` and cannot connect to the `Action client`, with the following errors:
 ```
 Waiting for /scaled_vel_joint_traj_controller/follow_joint_trajectory to come up
 
