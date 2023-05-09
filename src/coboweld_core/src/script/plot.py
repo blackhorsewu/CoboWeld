@@ -37,7 +37,7 @@ n_list = np.asarray(pcd.normals)
 pc_kdtree = o3d.geometry.KDTreeFlann(pcd)
 
 # Define the neighbourhood size for feature evaluations
-neighbour = 270 # min(count//100, 30)
+neighbour = 20 # min(count//100, 30)
 
 
 # density = []

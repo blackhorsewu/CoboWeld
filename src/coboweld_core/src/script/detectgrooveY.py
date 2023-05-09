@@ -964,7 +964,7 @@ def detect_groove_workflow(pcd):
   rviz_cloud = orh.o3dpc_to_rospc(pcd, frame_id="d435_depth_optical_frame")
   pub_captured.publish(rviz_cloud)
   
-  '''
+  ''''''
   if first_round == True:
     print("Do you want to save the new point cloud?")
     reply = input("Y for yes: ")
@@ -973,7 +973,7 @@ def detect_groove_workflow(pcd):
       o3d.io.write_point_cloud(filename, pcd)
     # else do nothing
   # else do nothing
-  '''
+  
 
   ## c. Count the number of points afterwards
   pc_number = np.asarray(pcd.points).shape[0]
@@ -1146,7 +1146,7 @@ if __name__ == "__main__":
 
   robot = urx.Robot('192.168.0.103')
 
-  # first_round = True
+  first_round = True
   while not rospy.is_shutdown():
 
     # move UR5 to starting point
@@ -1285,7 +1285,7 @@ if __name__ == "__main__":
     reply = input('Do you want to do it again? :')
     if (reply == 'n'):
       break
-    #first_round = False
+    first_round = False
 
   print("\n ************* End ************* ")
 
