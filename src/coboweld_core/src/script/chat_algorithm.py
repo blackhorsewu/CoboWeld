@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 # Load the point cloud data
-point_cloud = np.load('y-tube-joint.pcd')
+point_cloud = np.load('point_cloud.npy')
 
 # Convert the point cloud to grayscale image
 img = cv2.cvtColor(point_cloud, cv2.COLOR_BGR2GRAY)
